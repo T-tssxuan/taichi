@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-# Read data from csv file and process the data to an appropriate format
+# Read data from csv file and make the data to an appropriate format
 def ap_get_data_group_by_ap(gran=10):
     wifi_ap = pd.read_csv('./data/WIFI_AP_Passenger_Records_chusai_1stround.csv')
     fmt = '%Y-%m-%d-%H-%M-%S'
