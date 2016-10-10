@@ -10,7 +10,7 @@ def ap_get_data_group_by_ap(gran=10):
     wifi_ap['timeStamp'] = pd.to_datetime(wifi_ap['timeStamp'], format=fmt)
     wifi_ap = wifi_ap.set_index('WIFIAPTag')
     wifi_ap = wifi_ap.groupby(wifi_ap.index)
-    granularity = gran + 'Min'
+    granularity = str(gran) + 'Min'
     new_wifi_ap = [
             wifi_ap.get_group(key).set_index('timeStamp')
             for key in wifi_ap.groups.keys()
