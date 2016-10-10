@@ -12,7 +12,7 @@ def ap_get_data_group_by_ap(gran=10):
     wifi_ap = wifi_ap.groupby(wifi_ap.index)
     granularity = str(gran) + 'Min'
     new_wifi_ap = [
-            wifi_ap.get_group(key).set_index('timeStamp')
+            wifi_ap.get_group(key).set_index('timeStamp').sort_index()
             for key in wifi_ap.groups.keys()
             ]
     new_wifi_ap = [
@@ -33,4 +33,5 @@ def ap_plot_data_info(gran=10):
 # Generate the data in the difference format with given granularity
 def ap_get_data_by_difference(gran=10):
     data = ap_get_data_group_by_ap(gran)
+    return [ele.diff for ele in data]
 
