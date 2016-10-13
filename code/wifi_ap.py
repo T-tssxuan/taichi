@@ -149,3 +149,32 @@ def all_area_schedule_visualize_for_area_with_sum(gran=10):
     areas = ['E1', 'E2', 'E3', 'EC', 'T1', 'W1', 'W2', 'W3', 'WC']
     for area in areas:
         visualize_for_area_with_sum(area, 'scheduled_flt_time', gran, 'r')
+
+# visualize all user for the whole airport
+def visualize_for_all_with_sum(kind, gran=10, color='g'):
+    ap_data, gate_data, sche_data = ap_schedule_gate_combine(kind, gran)
+
+    flag = False
+    sum_data = {}
+    for key in ap_data.keys():
+        if not flag:
+            sum_data = ap_data[key].copy()
+            flag = True
+        else:
+            sum_data = sum_data.add(ap_data[key])
+
+    fig = sum_data.plot()
+    plt.title('all' + "---" + kind)
+    plt.xlim(
+            pd.to_datetime('2016-09-11 06:00:00'), 
+            pd.to_datetime('2016-09-11 20:00:00')
+            )
+    ymin, ymax = fig.get_ylim()
+    fig.vlines(x = sche_data.index, ymin=ymin, ymax=ymax - 1, color=color)
+    plt.show()
+
+def schedule_visualize_for_all_with_sum(gran=10):
+    visualize_for_all_with_sum('scheduled_flt_time', gran, 'r')
+
+def actual_visualize_for_all_with_sum(gran=10):
+    visualize_for_all_with_sum('actual_flt_time', gran, 'g')
