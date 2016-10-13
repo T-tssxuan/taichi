@@ -13,12 +13,12 @@ def sche_remove_nan_data():
 def sche_get_delay_stat():
     data = sche_remove_nan_data()
     data['scheduled_flt_time'] = pd.to_datetime(
-            data['scheduled_flt_time'], fmt = fmt
+            data['scheduled_flt_time'], format = fmt
             )
     data['actual_flt_time'] = pd.to_datetime(
-            data['actual_flt_time'], fmt = fmt
+            data['actual_flt_time'], format = fmt
             )
     stat = data['actual_flt_time'] - data['scheduled_flt_time'];
     stat.reset_index()
     stat.columns = ['delay']
-    stat = stat.groupby(stat['delay']).count;
+    return stat

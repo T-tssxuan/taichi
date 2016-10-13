@@ -43,7 +43,21 @@ def visualize_area_ap_time_variation(area, gran=10):
             index=sum_data.index
             )
 
-    fig = new_data.plot.bar(figsize=(40, 10), stacked=True)
+    sum_value = 0
+    ratio_data = {}
+    flag = False
+    for key in ap_data.keys():
+        ratio_data[key] = ap_data[key].sum().values[0]
+        sum_value += ratio_data[key]
+
+    ratio_data = {key: ratio_data[key] / sum_value for key in ratio_data.keys()}
+
+    fig = new_data.plot.bar(figsize=(80, 8), stacked=True)
+    x_min, x_max = fig.get_xlim()
+    pos = 0.0
+    for key in ratio_data.keys():
+        pos += ratio_data[key]
+        fig.hlines(y = pos, xmin = x_min, xmax = x_max)
     fig.legend_.remove()
     plt.show()
 
@@ -67,9 +81,24 @@ def visualize_area_ap_time_variation_no_rate(area, gran=10):
             index=sum_data.index
             )
 
-    fig = new_data.plot.bar(figsize=(120, 10))
+    fig = new_data.plot.bar(figsize=(80, 8), stacked=True)
     fig.legend_.remove()
     plt.show()
+
+def get_area_celluar_ratio(area, gran=10):
+    ap_data = ap_get_data_group_by_ap(gran)
+    ap_data = {key: ap_data[key] for key in ap_data.keys() if key.startswith(area)}
+
+    sum_data = 0
+    ratio_data = {}
+    flag = False
+    for key in ap_data.keys():
+        ratio_data[key] = ap_data[key].sum().values[0]
+        sum_data += ratio_data[key]
+
+    ratio_data = {key: ratio_data[key] / sum_data for key in ratio_data.keys()}
+
+    return ratio_data
 
 def get_test_data(area, gran=10):
     ap_data = ap_get_data_group_by_ap(gran)
@@ -85,4 +114,43 @@ def get_test_data(area, gran=10):
             sum_data.add(ap_data[key])
 
     return (ap_data, sum_data)
+
+def visualize_stair_ap_time_variation(area, gran=10):
+    ap_data = ap_get_data_group_by_ap(gran)
+    ap_data = {key: ap_data[key] for key in ap_data.keys() if key.startswith(area)}
+
+    new_data = {}
+    sum_value = 0
+    sum_set = False
+    for i in range(1, 4):
+        idx = area + '-' + str(i)
+        flag = False
+        for key in ap_data.keys():
+            if key.startswith(idx):
+                if not flag:
+                    flag = True
+                    new_data[idx] = ap_data[key]
+                else:
+                    new_data[idx] = new_data[idx].add(ap_data[key])
+        if not sum_set:
+            sum_set = True
+            sum_value = new_data[idx]
+        else:
+            sum_value = sum_value.add(new_data[idx])
+        
+    rate_data = {key: new_data[key].div(sum_value)['passengerCount'] for key in new_data.keys()}
+    rate_data = pd.DataFrame.from_dict(rate_data)
+    
+    primary_data = {key: new_data[key]['passengerCount'] for key in new_data.keys()}
+    primary_data = pd.DataFrame.from_dict(primary_data)
+    
+    fig = rate_data.plot.bar(figsize=(80, 8), stacked=True)
+    x_min, x_max = fig.get_xlim()
+    fig.legend_.remove()
+    plt.show()
+    
+    fig = primary_data.plot.bar(figsize=(80, 8), stacked=True)
+    x_min, x_max = fig.get_xlim()
+    fig.legend_.remove()
+    plt.show()
 
