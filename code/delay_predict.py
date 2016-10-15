@@ -18,8 +18,8 @@ class PredictDelay:
         self.csv['act'] = pd.to_datetime(self.csv['act'])
         self.csv['sch'] = pd.to_datetime(self.csv['sch'])
 
-        data['sch'] = data['sch'].add(pd.DateOffset(hours=8))
-        data['act'] = data['act'].add(pd.DateOffset(hours=8))
+        self.csv['sch'] = self.csv['sch'].add(pd.DateOffset(hours=8))
+        self.csv['act'] = self.csv['act'].add(pd.DateOffset(hours=8))
 
         self.csv = self.csv.sort_values('sch')
         self.csv = self.csv.reset_index()
