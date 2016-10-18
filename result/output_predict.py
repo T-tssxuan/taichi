@@ -133,7 +133,7 @@ class output_predict:
             pad = np.array([rgn, zeros, foo]).transpose()
             tmp = tmp.append(pd.DataFrame(pad, columns=columns_name))
 
-        
+        # the spread function
         def gen_num(idx, num):
             return num / 20
 
