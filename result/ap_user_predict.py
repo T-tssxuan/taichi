@@ -2,37 +2,28 @@ import pandas as pd
 import numpy as np
 from ap_user_predict_data import ap_user_predict_data
 
-data_source = ap_user_predict_data()
 
-class ap_user:
-    def __init__(self, gran):
-        '''
-        params:
-            gran: the granurality of the result
-        attributes:
-            gran: the granurality of the result
-            in_data: the input data
-            out_data: the output data
-            base_data: the initial ap user number
-            ap_ratio_data: the ap ratio in it's area
-        '''
+class ap_user_predict:
+    '''
+    params:
+        gran: the granurality of the result
+    attributes:
+        gran: the granurality of the result
+        variation_data: the input data
+        base_data: the initial ap user number
+        ap_ratio_data: the ap ratio in it's area
+    '''
+    def __init__(self, gran=10):
+        data_source = ap_user_predict_data()
         self.gran = gran
-        self.in_data = data_source.get_in_data()
-        self.out_data = data_source.get_out_data()
+        self.variation_data = data_source.get_variation_data()
         self.base_data = data_source.get_base_data()
         self.ap_ratio_data = data_source.get_ap_ratio_data()
 
-    def __generate_predict(self):
+    def generate_predict(self, start, end):
         # the result colums name
         tmp = 'slice' + str(self.gran) + 'min'
         columns = ['passengerCount', 'WIFIAPTag', tmp, 'area']
-
-        # calculate the pure input of each area
-        self.in_data = self.in_data.set_index(['timeStamp', 'area'])
-        self.out_data = self.out_data.set_index(['timeStamp', 'area'])
-
-        net_in = self.in_data.subtract(self.out_data)
-        net_in = net_in.reset_index()
 
         # gruop pure input by each area
         net_in = net_in.groupby('area')
@@ -91,5 +82,6 @@ class ap_user:
         result = result.reset_index()
         result = result[columns]
 
+        result.to_csv('./info/result.csv', columns=columns, index=False)
         return result
 

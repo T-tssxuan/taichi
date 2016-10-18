@@ -12,8 +12,11 @@ class output_predict:
         empty_count: the number of plane which is not given setting off area 
         passenger: the passenger number of each plane table
     '''
-    def __init__(self):
-        self.sche = pd.read_csv('./data/airport_gz_flights_chusai_1stround.csv')
+    def __init__(self, directory):
+        self.directory = directory
+        path = self.directory + 'airport_gz_flights_chusai.csv'
+
+        self.sche = pd.read_csv(path)
         self.sche.columns = ['fid', 'sft', 'aft', 'gate']
         self.sche['sft'] = pd.to_datetime(self.sche['sft'])
         self.sche['aft'] = pd.to_datetime(self.sche['aft'])
@@ -31,10 +34,19 @@ class output_predict:
 
         self.__get_output_predict_for_each_area()
         self.output_predict.to_csv(
-                './data/output_predict.csv', 
+                './info/output_predict.csv', 
                 columns=['timeStamp', 'num', 'area'],
                 index=False
                 )
+
+    def __get_output_date_range(self):
+        min_time = self.sche['sft'].min()
+        self.date_start = str(min_time.year) + '/' + str(min_time.month) + '/'
+        self.date_start += str(min_time.day) + ' ' + '00:00:00'
+
+        max_time = self.sche['sft'].max()
+        max_time += pd.DateOffset(days=1)
+        self.date_end = str(max_time.year) + str(max_time.month)
 
     def __fill_delay_for_without_actual_flt(self):
         print('fill delay for without actual flight time')
@@ -45,10 +57,14 @@ class output_predict:
                 x[2] = x[1] + offset
             return x
         self.sche = self.sche.apply(delay, axis=1)
+
+        set_offset = lambda x: x + pd.DateOffset(hours=8)
+        self.sche['sft'] = self.sche['sft'].apply(set_offset)
+        self.sche['aft'] = self.sche['aft'].apply(set_offset)
         
     def __fill_area_according_to_gate(self):
         print('fill area according to the flight gate')
-        self.gate = pd.read_csv('./data/airport_gz_gates.csv')
+        self.gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
         self.gate.columns = ['gate', 'area']
         self.gate['gate'] = self.gate['gate'].str.replace(' ', '')
         self.gate['area'] = self.gate['area'].str.replace(' ', '')
@@ -71,23 +87,31 @@ class output_predict:
 
     def __fill_passenger_number_according_statistic(self):
         print('fill passenger number according statistic')
-        self.passenger = pd.read_csv('./data/flight_passenger_num.csv')
+        self.passenger = pd.read_csv('./info/flight_passenger_num.csv')
         self.passenger.columns = ['fid', 'num']
         self.passenger['fid'] = self.passenger['fid'].str.replace(' ', '')
         self.passenger = self.passenger.set_index('fid')
 
+        # get the mean and the std of the flight passenger num to fill the blank
+        std = self.passenger.std()
+        mean = self.passenger.mean()
+
         self.sum_flight = 0
         self.miss_passenger = 0
+        self.miss_fid = []
         def get_number(x):
             self.sum_flight += 1
             if x in self.passenger.index:
                 return self.passenger.loc[x, 'num']
             else:
+                self.miss_fid.append(x)
                 self.miss_passenger += 1
-                tmp = 71 * np.random.randn() + 59
+                # fill the empty data with the mean and std
+                tmp = std * np.random.randn() + mean
+                # tmp = 0
                 if tmp < 0:
                     tmp = 1
-                elif tmp < 300:
+                elif tmp > 300:
                     tmp = 300
                 return tmp
         self.sche['num'] = self.sche['fid'].apply(get_number)
