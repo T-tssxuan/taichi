@@ -12,11 +12,8 @@ class output_predict:
         empty_count: the number of plane which is not given setting off area 
         passenger: the passenger number of each plane table
     '''
-    def __init__(self, directory):
-        self.directory = directory
-        path = self.directory + 'airport_gz_flights_chusai.csv'
-
-        self.sche = pd.read_csv(path)
+    def __init__(self):
+        self.sche = pd.read_csv('./data/airport_gz_flights_chusai_1stround.csv')
         self.sche.columns = ['fid', 'sft', 'aft', 'gate']
         self.sche['sft'] = pd.to_datetime(self.sche['sft'])
         self.sche['aft'] = pd.to_datetime(self.sche['aft'])
@@ -24,6 +21,7 @@ class output_predict:
         self.sche['gate'] = self.sche['gate'].str.replace(' ', '')
 
         self.__fill_delay_for_without_actual_flt()
+        print(self.sche.head())
         self.__fill_area_according_to_gate()
         self.__fill_passenger_number_according_statistic()
 
@@ -33,20 +31,10 @@ class output_predict:
 
         self.__get_output_predict_for_each_area()
         self.output_predict.to_csv(
-                './info/output_predict.csv', 
+                './data/output_predict.csv', 
                 columns=['timeStamp', 'num', 'area'],
                 index=False
                 )
-
-    def __get_output_date_range(self):
-        min_time = self.sche['sft'].min()
-        self.date_start = str(min_time.year) + '/' + str(min_time.month) + '/'
-        self.date_start += str(min_time.day)
-
-        max_time = self.sche['sft'].max()
-        max_time += pd.DateOffset(days=1)
-        self.date_end = str(max_time.year) + '/' + str(max_time.month) + '/'
-        self.data_end += str(max_time.day)
 
     def __fill_delay_for_without_actual_flt(self):
         print('fill delay for without actual flight time')
@@ -64,7 +52,7 @@ class output_predict:
         
     def __fill_area_according_to_gate(self):
         print('fill area according to the flight gate')
-        self.gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
+        self.gate = pd.read_csv('./data/airport_gz_gates.csv')
         self.gate.columns = ['gate', 'area']
         self.gate['gate'] = self.gate['gate'].str.replace(' ', '')
         self.gate['area'] = self.gate['area'].str.replace(' ', '')
@@ -87,14 +75,10 @@ class output_predict:
 
     def __fill_passenger_number_according_statistic(self):
         print('fill passenger number according statistic')
-        self.passenger = pd.read_csv('./info/flight_passenger_num.csv')
+        self.passenger = pd.read_csv('./data/flight_passenger_num.csv')
         self.passenger.columns = ['fid', 'num']
         self.passenger['fid'] = self.passenger['fid'].str.replace(' ', '')
         self.passenger = self.passenger.set_index('fid')
-
-        # get the mean and the std of the flight passenger num to fill the blank
-        std = self.passenger.std()
-        mean = self.passenger.mean()
 
         self.sum_flight = 0
         self.miss_passenger = 0
@@ -106,8 +90,7 @@ class output_predict:
             else:
                 self.miss_fid.append(x)
                 self.miss_passenger += 1
-                # fill the empty data with the mean and std
-                tmp = std * np.random.randn() + mean
+                tmp = 71 * np.random.randn() + 59
                 # tmp = 0
                 if tmp < 0:
                     tmp = 1
@@ -123,8 +106,17 @@ class output_predict:
 
         offset = pd.DateOffset(minutes=20)
 
-        # generate output info for each minutes in the given time range
-        rgn = pd.date_range(self.date_start, self.date_end, freq='Min')
+        def gen_num(idx, num):
+            return num / 20
+
+        def spread_function(row):
+            trg = pd.date_range(row['aft'] - offset, periods=20, freq='Min')
+            area = row['area']
+            num = row['num']
+            values = [[trg[idx], gen_num(idx, num), area] for idx in range(20)]
+            return pd.DataFrame(values, columns=columns_name)
+
+        rgn = pd.date_range('2016/09/10', '2016/09/15', freq='Min')
         areas = ['W1', 'W2', 'W3', 'E1', 'E2', 'E3']
         tmp = pd.DataFrame([], columns=columns_name)
         zeros = [0 for i in range(rgn.shape[0])]
@@ -133,21 +125,11 @@ class output_predict:
             pad = np.array([rgn, zeros, foo]).transpose()
             tmp = tmp.append(pd.DataFrame(pad, columns=columns_name))
 
-        
-        def gen_num(idx, num):
-            return num / 20
-
-        # spread the passenger number to a time range
-        def spread_function(row):
-            trg = pd.date_range(row['aft'] - offset, periods=20, freq='Min')
-            area = row['area']
-            num = row['num']
-            values = [[trg[idx], gen_num(idx, num), area] for idx in range(20)]
-            return pd.DataFrame(values, columns=columns_name)
-
+        print(tmp.head())
         for idx, row in self.sche.iterrows():
             tmp = tmp.append(spread_function(row))
 
+        print(tmp.head())
         tmp = tmp.groupby([pd.Grouper(key='timeStamp', freq='1Min'), 'area']).sum()
         self.output_predict = tmp.reset_index()
 
