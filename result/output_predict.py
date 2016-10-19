@@ -22,6 +22,7 @@ class output_predict:
         self.sche.columns = ['fid', 'sft', 'aft', 'gate']
         self.sche['sft'] = pd.to_datetime(self.sche['sft'])
         self.sche['aft'] = pd.to_datetime(self.sche['aft'])
+        self.sche['fid'] = self.sche['fid'].str.upper()
         self.sche['fid'] = self.sche['fid'].str.replace(' ', '')
         self.sche['gate'] = self.sche['gate'].str.replace(' ', '')
 
