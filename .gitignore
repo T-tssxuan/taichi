@@ -1,5 +1,8 @@
 *.swp
-code/data/*
-result/data/*
+code/data1/*
+code/data2/*
+result/data1/*
+result/data2/*
+result/info/*
 *.ipynb
 *.pyc

@@ -11,6 +11,8 @@ class output_predict:
         distribute: the area scheduled plane distribute
         empty_count: the number of plane which is not given setting off area 
         passenger: the passenger number of each plane table
+        date_start: the start of the predict day
+        date_end: the end of the predict day 
     '''
     def __init__(self, directory):
         self.directory = directory
