@@ -23,11 +23,11 @@ class input_predict:
         path = directory + 'airport_gz_flights_chusai.csv'
         sdata = pd.read_csv(path)
         del sdata['actual_flt_time']
-        # del sdata['BGATE_ID']
         sdata.columns = ['fid', 'sft', 'gate']
         sdata['fid'] = sdata['fid'].str.upper()
         sdata['fid'] = sdata['fid'].str.replace(' ', '')
         sdata['sft'] = pd.to_datetime(sdata['sft'])
+        sdata['sft'] = sdata['sft'].add(pd.DateOffset(hours=8))
         self.sdata = sdata
         self.__bind_area_for_fid()
         del self.sdata['gate']
@@ -43,13 +43,26 @@ class input_predict:
         self.pmean = pdata.mean()
 
     # start/end: YYYY/MM/DD HH:MM:SS
-    def predict(self, start, end):
+    def get_predict_area(self, start, end):
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
         return self.rst[
                 self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
                 ]
+
+    def get_predict_sum(self, start, end):
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+
+        tmp = self.rst[
+                self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
+                ]
+        tmp = tmp.groupby(['timeStamp', 'area']).sum()
+        
+        tmp = tmp.reset_index()
+
+        return tmp
 
 
     def train(self, start, end):
@@ -68,13 +81,13 @@ class input_predict:
             if row['fid'] in self.pdata.index:
                 p_num = self.pdata[row['fid']]
 
-            tmp = self.__spread(row['fid'], row['sft'], row['area'], p_num)
+            tmp = self.__spread(row['sft'], row['area'], p_num)
             rst = rst.append(tmp)
 
         self.rst = rst
 
 
-    def __spread(self, fid, sft, area, p_num):
+    def __spread(self, sft, area, p_num):
         before = pd.DateOffset(hours=-5)
         after = pd.DateOffset(hours=2)
 
@@ -158,5 +171,6 @@ class input_predict:
 
 
 
-ip = input_predict('./data1/')
-ip.train('', '')
+if __main__ == '__main__':
+    ip = input_predict('./data1/')
+    ip.train('', '')
