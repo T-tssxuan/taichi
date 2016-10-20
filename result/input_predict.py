@@ -99,8 +99,8 @@ class input_predict:
         rst = rst.groupby(['timeStamp', 'area']).sum()
         rst = rst.sort_index()
         rst = rst.reset_index()
+        rst.to_csv('./info/input_predict', ['timeStamp', 'area', 'num'], index=True)
         self.rst = rst
-
 
     def __spread(self, sft, area, p_num):
         # print(str(p_num) + ' ' + str(type(p_num)))
