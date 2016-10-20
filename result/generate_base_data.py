@@ -26,3 +26,11 @@ def generate_base_data(directory, epoch):
     columns=['area', 'WIFIAPTag', 'passengerCount'],
     index=False
     )
+
+if __name__ == '__main__':
+    directory = './data1/'
+    epoch = pd.to_datetime('2016/09/25 14:59:00')
+    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
+        directory = sys.argv[1]
+
+    generate_base_data(directory, epoch)

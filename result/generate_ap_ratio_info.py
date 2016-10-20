@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import sys
+import os
 
 
 def generate_ap_ratio_info(directory):
@@ -35,3 +37,9 @@ def generate_ap_ratio_info(directory):
     columns=['area', 'WIFIAPTag', 'ratio'], 
     index=False
     )
+
+if __name__ == '__main__':
+    directory = './data1/'
+    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
+        directory = sys.argv[1]
+    generate_ap_ratio_info(directory)

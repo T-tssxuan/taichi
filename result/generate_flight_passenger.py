@@ -35,3 +35,9 @@ def generate_flight_passenger_number(directory):
     columns=['flight_ID', 'num'],
     index=False
     )
+
+if __name__ == '__main__':
+    directory = './data1/'
+    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
+        directory = sys.argv[1]
+    generate_flight_passenger_number(directory)

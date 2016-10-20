@@ -85,3 +85,7 @@ class ap_user_predict:
         result.to_csv('./info/result.csv', columns=columns, index=False)
         return result
 
+
+if __name__ == '__main__':
+    aup = ap_user_predict()
+    ap_user_predict.generate_predict()
