@@ -28,8 +28,23 @@ class input_predict:
         sdata['fid'] = sdata['fid'].str.upper()
         sdata['fid'] = sdata['fid'].str.replace(' ', '')
         sdata['sft'] = pd.to_datetime(sdata['sft'])
-        sdata = sdata.set_index('fid')
         self.sdata = sdata
+
+        pdata = pd.read_csv('./info/flight_passenger_num.csv')
+        pdata.columns = ['fid', 'num']
+        pdata['fid'] = passenger['fid'].str.replace(' ', '')
+        pdata = passenger.set_index('fid')
+        self.pdata = pdata
+
+        # get the mean and the std of the flight passenger num to fill the blank
+        self.pstd = pdata.std()
+        self.pmean = pdata.mean()
+
+    # start/end: YYYY/MM/DD HH:MM:SS
+    def predict(self, start, end):
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+
 
     def train(self, start, end):
         train_data = self.__get_train_data()
@@ -37,45 +52,39 @@ class input_predict:
                 for co in train_data.columns]
         
         self.train_data = train_data
-        self.train_result = train_result
+        self.train_std = train_data.std()
+        self.train_mean = train_data.mean()
 
-    # start/end: YYYY/MM/DD HH:MM:SS
-    def predict(self, start, end):
-        start = pd.to_datetime(start)
-        end = pd.to_datetime(end)
+        rst = pd.DataFrame()
+        for row in self.sdata.iterrows():
+            p_num = np.random.randn() * self.pstd + self.pmean
+            if row['fid'] in self.pdata.index:
+                p_num = self.pdata[row['fid']]
 
-        passenger = pd.read_csv('./info/flight_passenger_num.csv')
-        passenger.columns = ['fid', 'num']
-        passenger['fid'] = passenger['fid'].str.replace(' ', '')
-        passenger = passenger.set_index('fid')
+            tmp = self.__spread(row['fid'], row['sft'], p_num)
+            rst = rst.append(tmp)
 
-        # get the mean and the std of the flight passenger num to fill the blank
-        std = self.passenger.std()
-        mean = self.passenger.mean()
+        self.rst = rst
 
-        def get_number(x):
-            if x in passenger.index:
-                return passenger.loc[x, 'num']
-            else:
-                # fill the empty data with the mean and std
-                tmp = std * np.random.randn() + mean
-                # tmp = 0
-                if tmp < 0:
-                    tmp = 1
-                elif tmp > 300:
-                    tmp = 300
-                return tmp
 
-        def gen_total(x):
-            before = pd.DateOffset(hours=-2)
-            after = pd.DateOffset(hours=5)
-            
-            before_plane = self.sdata[self.sdata > x + before & self.sdata < x]
-            after_plane = self.sdata[self.sdata < x + after & self.sdata > x]
-            
+    def __spread(self, fid, sft, p_num):
+        before = pd.DateOffset(hours=-5)
+        after = pd.DateOffset(hours=2)
 
+        num = np.array([
+            np.random.randn() * self.train_std[i] + self.train_mean[i]
+            for i in range(len(self.train_std))
+            ])
+        num = spread * p_num
+
+        time = pd.date_range(sft + before, sft + after, freq='1Min').values
         
-        rst = pd.date_range(start, end, freq='1Min')
+        fids = pd.Series([fid for i in range(len(self.train_std))]).values
+
+        rst = pd.Series(np.array([time, fids, num]).transpose())
+
+        return rst
+
 
     def __get_train_data(self):
         data = self.cdata.copy()
