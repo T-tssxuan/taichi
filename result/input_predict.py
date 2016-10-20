@@ -8,6 +8,7 @@ class input_predict:
     in information of the airport.
     '''
     def __init__(self, directory):
+        self.directory = directory
         path = directory + 'airport_gz_departure_chusai.csv'
         cdata = pd.read_csv(path)
         del cdata['passenger_ID2']
@@ -34,31 +35,41 @@ class input_predict:
 
         pdata = pd.read_csv('./info/flight_passenger_num.csv')
         pdata.columns = ['fid', 'num']
-        pdata['fid'] = passenger['fid'].str.replace(' ', '')
-        pdata = passenger.set_index('fid')
+        pdata['fid'] = pdata['fid'].str.replace(' ', '')
+        pdata = pdata.set_index('fid')
         self.pdata = pdata
 
         # get the mean and the std of the flight passenger num to fill the blank
-        self.pstd = pdata.std()
-        self.pmean = pdata.mean()
+        self.pstd = pdata.std()[0]
+        self.pmean = pdata.mean()[0]
 
     # start/end: YYYY/MM/DD HH:MM:SS
-    def get_predict_area(self, start, end):
-        start = pd.to_datetime(start)
-        end = pd.to_datetime(end)
-
-        return self.rst[
-                self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
-                ]
-
-    def get_predict_sum(self, start, end):
+    def get_predict_area(self, start, end, gran=10):
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
         tmp = self.rst[
                 self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
                 ]
-        tmp = tmp.groupby(['timeStamp', 'area']).sum()
+        tmp = tmp.groupby(
+                [pd.Grouper(key='timeStamp', freq=gran), 'area']
+                ).sum()
+
+        tmp = tmp.reset_index()
+        return tmp
+
+
+    def get_predict_sum(self, start, end, gran=10):
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+        gran = str(gran) + 'Min'
+
+        tmp = self.rst.copy()
+        del tmp['area']
+
+        tmp = tmp[tmp['timeStamp'] >= start & tmp['timeStamp'] <= end]
+
+        tmp = tmp.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
         
         tmp = tmp.reset_index()
 
@@ -76,18 +87,25 @@ class input_predict:
         self.train_mean = train_data.mean()
 
         rst = pd.DataFrame()
-        for row in self.sdata.iterrows():
+        for idx, row in self.sdata.iterrows():
             p_num = np.random.randn() * self.pstd + self.pmean
             if row['fid'] in self.pdata.index:
-                p_num = self.pdata[row['fid']]
+                p_num = self.pdata.loc[row['fid'], 'num']
 
             tmp = self.__spread(row['sft'], row['area'], p_num)
             rst = rst.append(tmp)
 
+        rst['timeStamp'] = pd.to_datetime(rst['timeStamp'])
+        rst = rst.groupby(['timeStamp', 'area']).sum()
+        rst = rst.sort_index()
+        rst = rst.reset_index()
         self.rst = rst
 
 
     def __spread(self, sft, area, p_num):
+        # print(str(p_num) + ' ' + str(type(p_num)))
+        # print(str(sft))
+        # print(str(area))
         before = pd.DateOffset(hours=-5)
         after = pd.DateOffset(hours=2)
 
@@ -95,7 +113,7 @@ class input_predict:
             np.random.randn() * self.train_std[i] + self.train_mean[i]
             for i in range(len(self.train_std))
             ])
-        num = spread * p_num
+        num = num * p_num
 
         time = pd.date_range(sft + before, sft + after, freq='1Min').values
         
@@ -167,10 +185,8 @@ class input_predict:
                 return gate.loc[x, 'area']
             else:
                 return tmp[np.random.randint(2)]
-        self.sche['area'] = self.sche['gate'].apply(func)
+        self.sdata['area'] = self.sdata['gate'].apply(func)
 
-
-
-if __main__ == '__main__':
+if __name__ == '__main__':
     ip = input_predict('./data1/')
     ip.train('', '')

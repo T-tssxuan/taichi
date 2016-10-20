@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
+import os
 
 def generate_flight_passenger_number(directory):
     path = directory + 'airport_gz_departure_chusai.csv'
