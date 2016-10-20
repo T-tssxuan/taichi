@@ -23,12 +23,14 @@ class input_predict:
         path = directory + 'airport_gz_flights_chusai.csv'
         sdata = pd.read_csv(path)
         del sdata['actual_flt_time']
-        del sdata['BGATE_ID']
-        sdata.columns = ['fid', 'sft']
+        # del sdata['BGATE_ID']
+        sdata.columns = ['fid', 'sft', 'gate']
         sdata['fid'] = sdata['fid'].str.upper()
         sdata['fid'] = sdata['fid'].str.replace(' ', '')
         sdata['sft'] = pd.to_datetime(sdata['sft'])
         self.sdata = sdata
+        self.__bind_area_for_fid()
+        del self.sdata['gate']
 
         pdata = pd.read_csv('./info/flight_passenger_num.csv')
         pdata.columns = ['fid', 'num']
@@ -45,12 +47,17 @@ class input_predict:
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
+        return self.rst[
+                self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
+                ]
+
 
     def train(self, start, end):
         train_data = self.__get_train_data()
         train_result = [[train_data[co].mean(), train_data[co].std()] 
                 for co in train_data.columns]
         
+        self.train_result = train_result
         self.train_data = train_data
         self.train_std = train_data.std()
         self.train_mean = train_data.mean()
@@ -61,13 +68,13 @@ class input_predict:
             if row['fid'] in self.pdata.index:
                 p_num = self.pdata[row['fid']]
 
-            tmp = self.__spread(row['fid'], row['sft'], p_num)
+            tmp = self.__spread(row['fid'], row['sft'], row['area'], p_num)
             rst = rst.append(tmp)
 
         self.rst = rst
 
 
-    def __spread(self, fid, sft, p_num):
+    def __spread(self, fid, sft, area, p_num):
         before = pd.DateOffset(hours=-5)
         after = pd.DateOffset(hours=2)
 
@@ -79,9 +86,14 @@ class input_predict:
 
         time = pd.date_range(sft + before, sft + after, freq='1Min').values
         
-        fids = pd.Series([fid for i in range(len(self.train_std))]).values
+        areas = pd.Series([area for i in range(len(self.train_std))]).values
 
-        rst = pd.Series(np.array([time, fids, num]).transpose())
+        columns = ['timeStamp', 'area', 'num']
+
+        rst = pd.DataFrame(
+            np.array([time, areas, num]).transpose(), 
+            columns=columns
+            )
 
         return rst
 
@@ -125,6 +137,26 @@ class input_predict:
             idx += 1
 
         return rst
+    
+    def __bind_area_for_fid(self):
+        print('fill area according to the flight gate')
+        gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
+        gate.columns = ['gate', 'area']
+        gate['gate'] = gate['gate'].str.upper()
+        gate['gate'] = gate['gate'].str.replace(' ', '')
+        gate['area'] = gate['area'].str.upper()
+        gate['area'] = gate['area'].str.replace(' ', '')
+        gate = gate.set_index('gate')
+
+        tmp = ['E1', 'E2']
+        def func(x):
+            if x in gate.index:
+                return gate.loc[x, 'area']
+            else:
+                return tmp[np.random.randint(2)]
+        self.sche['area'] = self.sche['gate'].apply(func)
+
+
 
 ip = input_predict('./data1/')
 ip.train('', '')
