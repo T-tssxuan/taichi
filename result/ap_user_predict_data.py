@@ -18,28 +18,18 @@ and each entry table:
                 ..........
 
 base_data: dictionary, each area is a key included: W1, W2, W3, E1, E2....
-   area       WIFIAPTag         passengerCount   
-     W1         E1-1A-1<E1-1-01>        15          
-     W1         E1-1A-2<E1-1-02>        15          
-     W1         E1-1A-3<E1-1-03>        38          
-     W1         E1-1A-4<E1-1-04>        19          
-     W1         E1-1A-5<E1-1-05>         0          
-
-ap_ratio_data: dictionary, each area key included: W1, W2, W3, E1, E2...
-    area         WIFIAPTag             ratio
-      W1           E1-1A-1<E1-1-01>        x1
-      W1           E1-1A-2<E1-1-02>        x2 
-      W1           E1-1A-3<E1-1-03>        x3
-      W1           E1-1A-4<E1-1-04>        x4   
-      W1           E1-1A-5<E1-1-05>        x5 
-
+   area       WIFIAPTag         passengerCount   ratio
+     W1         E1-1A-1<E1-1-01>        15        x1     
+     W1         E1-1A-2<E1-1-02>        15        x2     
+     W1         E1-1A-3<E1-1-03>        38        x3     
+     W1         E1-1A-4<E1-1-04>        19        x4     
+     W1         E1-1A-5<E1-1-05>         0        x5     
 '''
 
 class ap_user_predict_data:
     def __init__(self):
         self.__init_variation_data()
         self.__init_base_data()
-        self.__init_ap_ratio_data()
 
     def __init_variation_data(self):
         variation_data = pd.read_csv('./info/variation_data.csv')
@@ -48,9 +38,6 @@ class ap_user_predict_data:
 
     def __init_base_data(self):
         self.base_data = pd.read_csv('./info/base_data.csv')
-
-    def __init_ap_ratio_data(self):
-        self.ap_ratio_data = pd.read_csv('./info/ap_ratio_data.csv')
 
     # return data by the granularity
     def get_variation_data(self, gran=1):
@@ -63,9 +50,4 @@ class ap_user_predict_data:
     # return data by the granularity
     def get_base_data(self, gran=1):
         tmp = self.base_data.copy()
-        tmp = tmp.reset_index()
-        return tmp
-
-    def get_ap_ratio_data(self):
-        tmp = self.ap_ratio_data.copy()
         return tmp
