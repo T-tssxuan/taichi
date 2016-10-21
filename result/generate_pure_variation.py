@@ -3,8 +3,9 @@ import numpy as np
 import os
 import sys
 import time
+from log import debug
 
-def generate_pure_variation(directory):
+def generate_pure_variation():
     path = './info/checkin_predict.csv'
     cin_data = pd.read_csv(path)
     cin_data['timeStamp'] = pd.to_datetime(cin_data['timeStamp'])

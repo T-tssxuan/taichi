@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
+from log import debug
 
 class output_predict:
     '''
@@ -73,7 +74,7 @@ class output_predict:
                 )
 
     def __set_ec_wc_num(self, rst):
-        print('set EC WC area num')
+        debug('set EC WC area num')
         tmp = rst.set_index(['timeStamp', 'area'])
         def func(x):
             val = 0
@@ -99,7 +100,7 @@ class output_predict:
         '''
         get the predict data with summary of all
         '''
-        print('get the sum predict data')
+        debug('get the sum predict data')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
         gran = str(gran) + 'Min'
@@ -116,7 +117,7 @@ class output_predict:
         return tmp
 
     def __fill_delay_for_without_actual_flt(self):
-        print('fill delay for without actual flight time')
+        debug('fill delay for without actual flight time')
         def delay(x):
             if pd.isnull(x[2]):
                 offset = int(18 * np.random.randn() + 22)
@@ -130,7 +131,7 @@ class output_predict:
         self.sche['aft'] = self.sche['aft'].apply(set_offset)
         
     def __fill_area_according_to_gate(self):
-        print('fill area according to the flight gate')
+        debug('fill area according to the flight gate')
         gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
         gate.columns = ['gate', 'area']
         gate['gate'] = gate['gate'].str.replace(' ', '')
@@ -153,7 +154,7 @@ class output_predict:
 
 
     def __fill_passenger_number_according_statistic(self):
-        print('fill passenger number according statistic')
+        debug('fill passenger number according statistic')
         passenger = pd.read_csv('./info/flight_passenger_num.csv')
         passenger.columns = ['fid', 'num']
         passenger['fid'] = passenger['fid'].str.replace(' ', '')
@@ -179,7 +180,7 @@ class output_predict:
         self.sche['num'] = self.sche['fid'].apply(get_number)
 
     def __get_output_predict_for_each_area(self):
-        print('get output predict for each plane')
+        debug('get output predict for each plane')
 
         columns_name = ['timeStamp', 'num', 'area']
 

@@ -3,6 +3,7 @@ import numpy as np
 import os
 import sys
 import time
+from log import debug
 
 ap_data = 0
 in_data = 0
@@ -10,7 +11,7 @@ out_data = 0
 pure_data = 0
 rst_data = 0
 def generate_transform_ration(directory):
-    print('generate transform ration')
+    debug('generate transform ration')
     
     format = '%Y-%m-%d-%H-%M-%S'
     path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'

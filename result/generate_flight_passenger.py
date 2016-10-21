@@ -3,8 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
+from log import debug
 
-def generate_flight_passenger_number(directory):
+def generate_flight_passenger(directory):
+    debug('flight passenger')
     path = directory + 'airport_gz_departure_chusai.csv'
 
     data = pd.read_csv(path)
@@ -42,4 +44,4 @@ if __name__ == '__main__':
     directory = './data1/'
     if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
         directory = sys.argv[1]
-    generate_flight_passenger_number(directory)
+    generate_flight_passenger(directory)

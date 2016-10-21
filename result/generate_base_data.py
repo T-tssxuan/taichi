@@ -2,10 +2,14 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+from log import debug
 
 
 def generate_base_data(directory, epoch):
-    path = derictory + 'WIFI_AP_Passenger_Records_chusai.csv'
+    debug('generate the base data at ' + str(epoch))
+
+    epoch = pd.to_datetime(epoch)
+    path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'
 
     base_data = pd.read_csv(path)
     fmt = '%Y-%m-%d-%H-%M-%S'

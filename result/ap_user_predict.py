@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from ap_user_predict_data import ap_user_predict_data
-
+from log import debug
 
 class ap_user_predict:
     '''
@@ -13,7 +13,8 @@ class ap_user_predict:
         base_data: the initial ap user number
         ap_ratio_data: the ap ratio in it's area
     '''
-    def __init__(self, gran=10):
+    def __init__(self, start, end, gran=10):
+        debug('start: ' + str(start) + ' end: ' + str(end) + ' gran' + str(gran))
         data_source = ap_user_predict_data()
         self.gran = gran
         self.variation_data = data_source.get_variation_data()
@@ -21,12 +22,14 @@ class ap_user_predict:
         self.ap_ratio_data = data_source.get_ap_ratio_data()
 
     def generate_predict(self, start, end):
+        debug('start: ' + str(start) + ' end: ' + str(end))
+
         # the result colums name
         tmp = 'slice' + str(self.gran) + 'min'
         columns = ['passengerCount', 'WIFIAPTag', tmp, 'area']
 
         # gruop pure input by each area
-        net_in = net_in.groupby('area')
+        net_in = self.variation_data.groupby('area')
 
         # set the base passenger for each ap
         base_num = self.base_data.set_index(['area', 'WIFIAPTag'])
@@ -44,7 +47,7 @@ class ap_user_predict:
             return s
 
         # generate the result for each area and each ap of the area
-        for area in net_in.keys():
+        for area in net_in.groups:
             # preprocess the pure input of the area
             sec_net_in = net_in.get_group(area)
             del sec_net_in['area']

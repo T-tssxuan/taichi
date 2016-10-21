@@ -3,8 +3,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
+from log import debug
 
 def generate_ec_wc_ratio(directory):
+    debug('generate ec wc ratio')
     path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'
     ap_data = pd.read_csv(path)
     ap_data.columns = ['tag', 'num', 'timeStamp']

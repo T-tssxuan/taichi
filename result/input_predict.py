@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import datetime
+from log import debug
 
 class input_predict:
     '''
@@ -37,6 +38,7 @@ class input_predict:
         self.category = category
 
         self.directory = directory
+
         path = directory + 'airport_gz_flights_chusai.csv'
         sdata = pd.read_csv(path)
         del sdata['actual_flt_time']
@@ -77,8 +79,8 @@ class input_predict:
         '''
         read the security data into memory and make it to the consistce form
         '''
-        print('init the security data')
-        path = directory + 'airport_gz_security_check_chusai.csv'
+        debug('init the security data')
+        path = self.directory + 'airport_gz_security_check_chusai.csv'
         data = pd.read_csv(path)
         del data['passenger_ID']
         data.columns = ['ct', 'fid']
@@ -112,8 +114,8 @@ class input_predict:
         '''
         init the checkin data
         '''
-        print('init the checkin data')
-        path = directory + 'airport_gz_departure_chusai.csv'
+        debug('init the checkin data')
+        path = self.directory + 'airport_gz_departure_chusai.csv'
         data = pd.read_csv(path)
         del data['passenger_ID2']
         data.columns = ['fid', 'ft', 'ct']
@@ -132,7 +134,7 @@ class input_predict:
         '''
         get the predict data base the area and the start, end of time
         '''
-        print('get the predict data base area')
+        debug('get the predict data base area')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
@@ -152,7 +154,7 @@ class input_predict:
         '''
         get the predict data with summary of all
         '''
-        print('get the sum predict data')
+        debug('get the sum predict data')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
         gran = str(gran) + 'Min'
@@ -170,8 +172,8 @@ class input_predict:
 
 
     def train(self, start, end):
-        print('training')
-        print(time.strftime('%H:%M:%S'))
+        debug('training')
+        debug(time.strftime('%H:%M:%S'))
         time_start = time.time()
 
         start = pd.to_datetime(start)
@@ -188,7 +190,7 @@ class input_predict:
 
         rst = pd.DataFrame()
 
-        print('begin predict')
+        debug('begin predict')
         for idx, row in self.sdata.iterrows():
             p_num = np.random.randn() * self.pstd + self.pmean
             if row['fid'] in self.pdata.index:
@@ -196,7 +198,7 @@ class input_predict:
 
             tmp = self.__spread(row['sft'], row['area'], p_num)
             rst = rst.append(tmp)
-        print('finish predict')
+        debug('finish predict')
 
         rst['timeStamp'] = pd.to_datetime(rst['timeStamp'])
         
@@ -229,13 +231,13 @@ class input_predict:
                 index=False
                 )
 
-        print('finish training')
-        print(time.strftime('%H:%M:%S'))
+        debug('finish training')
+        dabug(time.strftime('%H:%M:%S'))
         seconds_count = time.time() - time_start
-        print("total: " + str(datetime.timedelta(seconds=seconds_count)))
+        debug("total: " + str(datetime.timedelta(seconds=seconds_count)))
 
     def __set_ec_wc_num(self, rst):
-        print('set EC WC area num')
+        debug('set EC WC area num')
         tmp = rst.set_index(['timeStamp', 'area'])
         def func(x):
             val = 0
@@ -259,7 +261,7 @@ class input_predict:
 
 
     def __fill_rst(self, rst, start, end):
-        print('fill rst content')
+        debug('fill rst content')
         data = pd.DataFrame()
 
         time_rng = pd.date_range(start, end, freq='1Min')
@@ -278,9 +280,9 @@ class input_predict:
         return rst
 
     def __spread(self, sft, area, p_num):
-        # print(str(p_num) + ' ' + str(type(p_num)))
-        # print(str(sft))
-        # print(str(area))
+        # debug(str(p_num) + ' ' + str(type(p_num)))
+        # debug(str(sft))
+        # debug(str(area))
         before = pd.DateOffset(hours=-5)
         after = pd.DateOffset(hours=2)
 
@@ -305,7 +307,7 @@ class input_predict:
 
 
     def __get_train_data(self):
-        print('get train data')
+        debug('get train data')
         data = self.cdata.copy()
 
         idx = 0
@@ -346,7 +348,7 @@ class input_predict:
         return rst
     
     def __bind_area_for_fid(self):
-        print('fill area according to the flight gate')
+        debug('fill area according to the flight gate')
         gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
         gate.columns = ['gate', 'area']
         gate['gate'] = gate['gate'].str.upper()
