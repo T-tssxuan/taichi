@@ -187,7 +187,7 @@ class output_predict:
 
         # generate output info for each minutes in the given time range
         rgn = pd.date_range(self.date_start, self.date_end, freq='Min')
-        areas = ['W1', 'W2', 'W3', 'E1', 'E2', 'E3']
+        areas = ['W1', 'W2', 'W3', 'E1', 'E2', 'E3', 'EC', 'WC']
         tmp = pd.DataFrame([], columns=columns_name)
         zeros = [0 for i in range(rgn.shape[0])]
         for area in areas:

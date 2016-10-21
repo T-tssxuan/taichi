@@ -22,30 +22,32 @@ def generate_pure_variation(directory):
 
     wpure_data = wcin_data.subtract(wsin_data)
     wpure_data = wpure_data.reset_index()
-    wpure_data['area'] = pd.Series(['T1' for i in wpure_data.shape[0]])
+    wpure_data['area'] = pd.Series(['T1' for i in range(wpure_data.shape[0])])
+    wpure_data = wpure_data[['timeStamp', 'num', 'area']]
 
     path = './info/output_predict.csv'
     out_data = pd.read_csv(path)
     out_data['timeStamp'] = pd.to_datetime(out_data['timeStamp'])
 
-    cin_data = cin_data.set_index(['timeStamp', 'area'])
     sin_data = sin_data.set_index(['timeStamp', 'area'])
     out_data = out_data.set_index(['timeStamp', 'area'])
 
     pure_data = sin_data.subtract(out_data)
+    pure_data = pure_data.reset_index()
 
     pure_data = pure_data.append(wpure_data)
 
-    pure_data['num'] = pure_data['num'].multiply(0.15)
+    pure_data['num'] = pure_data['num'] * 0.15
 
     pure_data.to_csv(
             './info/variation_data.csv', 
             columns=['timeStamp', 'num', 'area'],
             index=False
             )
+    return (sin_data, out_data, pure_data, wpure_data)
 
 if __name__ == '__main__':
     directory = './data1/'
     if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
         directory = sys.argv[1]
-    generate_pure_variation(directory)
+    sin_data, out_data, ipure_data, wpure_data = generate_pure_variation(directory)
