@@ -34,6 +34,7 @@ class input_predict:
         self.w_ratio = 0.6252504
         self.e_ratio = 0.560917
 
+        self.category = category
 
         self.directory = directory
         path = directory + 'airport_gz_flights_chusai.csv'
@@ -55,9 +56,11 @@ class input_predict:
         # init the predict base data
         if category == 0:
             self.rst_file_name = './info/checkin_predict.csv'
+            self.rst_sum_file_name = './info/checkin_sum_predict.csv'
             self.cdata = self.__init_checkin_data()
         else:
             self.rst_file_name = './info/security_predict.csv'
+            self.rst_sum_file_name = './info/security_sum_predict.csv'
             self.cdata = self.__init_security_data()
 
         pdata = pd.read_csv('./info/flight_passenger_num.csv')
@@ -92,7 +95,7 @@ class input_predict:
         
         # fill the security data with the nearest correspond flight
         def func(x):
-            val = tmp.loc[x['fid'], 'sft']
+            val = sdata.loc[x['fid'], 'sft']
             if type(val) is pd.tslib.Timestamp:
                 return val
             eles = val.values
@@ -134,7 +137,8 @@ class input_predict:
         end = pd.to_datetime(end)
 
         tmp = self.rst[
-                self.rst['timeStamp'] >= start & self.rst['timeStamp'] <= end
+                (self.rst['timeStamp'] >= start) & 
+                (self.rst['timeStamp'] <= end)
                 ]
         tmp = tmp.groupby(
                 [pd.Grouper(key='timeStamp', freq=gran), 'area']
@@ -156,7 +160,7 @@ class input_predict:
         tmp = self.rst.copy()
         del tmp['area']
 
-        tmp = tmp[tmp['timeStamp'] >= start & tmp['timeStamp'] <= end]
+        tmp = tmp[(tmp['timeStamp'] >= start) & (tmp['timeStamp'] <= end)]
 
         tmp = tmp.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
         
@@ -204,12 +208,27 @@ class input_predict:
         rst = rst[(rst['timeStamp'] >= start) & (rst['timeStamp'] <= end)]
         rst = self.__set_ec_wc_num(rst)
 
+        self.rst = rst
+
+        # write the result
         rst.to_csv(
                 self.rst_file_name,
                 columns=['timeStamp', 'area', 'num'], 
-                index=True
+                index=False
                 )
-        self.rst = rst
+
+        # output the sum
+        gran = '10Min'
+        sum_rst = rst.copy()
+        del sum_rst['area']
+        sum_rst = sum_rst.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
+        sum_rst = sum_rst.reset_index()
+        sum_rst.to_csv(
+                self.rst_sum_file_name, 
+                columns=['timeStamp', 'num'],
+                index=False
+                )
+
         print('finish training')
         print(time.strftime('%H:%M:%S'))
         seconds_count = time.time() - time_start
@@ -221,14 +240,14 @@ class input_predict:
         def func(x):
             val = 0
             if x['area'] == 'EC':
-                val += tmp.loc[x['timeStamp'], 'E1', 'num']
-                val += tmp.loc[x['timeStamp'], 'E2', 'num']
-                val += tmp.loc[x['timeStamp'], 'E3', 'num']
+                val += tmp.loc[x['timeStamp'], 'E1']['num']
+                val += tmp.loc[x['timeStamp'], 'E2']['num']
+                val += tmp.loc[x['timeStamp'], 'E3']['num']
                 return val * (1 - self.e_ratio)
             elif x['area'] == 'WC':
-                val += tmp.loc[x['timeStamp'], 'W1', 'num']
-                val += tmp.loc[x['timeStamp'], 'W2', 'num']
-                val += tmp.loc[x['timeStamp'], 'W3', 'num']
+                val += tmp.loc[x['timeStamp'], 'W1']['num']
+                val += tmp.loc[x['timeStamp'], 'W2']['num']
+                val += tmp.loc[x['timeStamp'], 'W3']['num']
                 return val * (1 - self.w_ratio)
             elif x['area'] == 'W1' or x['area'] == 'W2' or x['area'] == 'W3':
                 return x['num'] * self.w_ratio
@@ -345,5 +364,5 @@ class input_predict:
         self.sdata['area'] = self.sdata['gate'].apply(func)
 
 if __name__ == '__main__':
-    ip = input_predict(0, './data1/')
-    ip.train('2015/09/10 00:00:00', '2015/09/15 00:00:00')
+    ip = input_predict(1, './data1/')
+    ip.train('2016/09/10 00:00:00', '2016/09/15 00:00:00')

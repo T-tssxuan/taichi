@@ -1,30 +1,43 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
+import os
 
 class output_predict:
     '''
     attributes:
         sche: the plane schedule information
-        output_predict: the output predict for each area
-        gate: teh airport gate and area relationship table
+        rst: the output predict for each area
         distribute: the area scheduled plane distribute
         empty_count: the number of plane which is not given setting off area 
-        passenger: the passenger number of each plane table
         date_start: the start of the predict day
         date_end: the end of the predict day 
+    dependencies:
+        .directory/airport_gz_flights_chusai.csv
+        .directory/airport_gz_gates.csv
+        ./info/flight_passenger_num.csv
+    result:
+        ./info/output_predic.csv
     '''
-    def __init__(self, directory):
+    def __init__(self, start, end, directory):
         self.directory = directory
         path = self.directory + 'airport_gz_flights_chusai.csv'
 
-        self.sche = pd.read_csv(path)
-        self.sche.columns = ['fid', 'sft', 'aft', 'gate']
-        self.sche['sft'] = pd.to_datetime(self.sche['sft'])
-        self.sche['aft'] = pd.to_datetime(self.sche['aft'])
-        self.sche['fid'] = self.sche['fid'].str.upper()
-        self.sche['fid'] = self.sche['fid'].str.replace(' ', '')
-        self.sche['gate'] = self.sche['gate'].str.replace(' ', '')
+        self.date_start = pd.to_datetime(start)
+        self.date_end = pd.to_datetime(end)
+
+        sche = pd.read_csv(path)
+        sche.columns = ['fid', 'sft', 'aft', 'gate']
+        sche['sft'] = pd.to_datetime(sche['sft'])
+        sche['aft'] = pd.to_datetime(sche['aft'])
+        sche['fid'] = sche['fid'].str.upper()
+        sche['fid'] = sche['fid'].str.replace(' ', '')
+        sche['gate'] = sche['gate'].str.replace(' ', '')
+        sche['gate'] = sche['gate'].astype(str)
+        sche['gate'] = sche['gate'].apply(lambda x: x.split(',')[-1])
+
+        self.sche = sche
 
         self.__fill_delay_for_without_actual_flt()
         self.__fill_area_according_to_gate()
@@ -34,22 +47,44 @@ class output_predict:
         del self.sche['gate']
         del self.sche['fid']
 
-        self.__get_output_predict_for_each_area()
-        self.output_predict.to_csv(
+        self.rst = self.__get_output_predict_for_each_area()
+        self.rst.to_csv(
                 './info/output_predict.csv', 
                 columns=['timeStamp', 'num', 'area'],
                 index=False
                 )
 
-    def __get_output_date_range(self):
-        min_time = self.sche['sft'].min()
-        self.date_start = str(min_time.year) + '/' + str(min_time.month) + '/'
-        self.date_start += str(min_time.day)
+        # output the sum
+        gran = '10Min'
+        sum_rst = self.rst.copy()
+        del sum_rst['area']
+        sum_rst = sum_rst.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
+        sum_rst = sum_rst.reset_index()
+        sum_rst.to_csv(
+                './info/output_sum_predict.csv',
+                columns=['timeStamp', 'num'],
+                index=False
+                )
 
-        max_time = self.sche['sft'].max()
-        max_time += pd.DateOffset(days=1)
-        self.date_end = str(max_time.year) + '/' + str(max_time.month) + '/'
-        self.data_end += str(max_time.day)
+    def get_predict_sum(self, start, end, gran=10):
+        '''
+        get the predict data with summary of all
+        '''
+        print('get the sum predict data')
+        start = pd.to_datetime(start)
+        end = pd.to_datetime(end)
+        gran = str(gran) + 'Min'
+
+        tmp = self.rst.copy()
+        del tmp['area']
+
+        tmp = tmp[(tmp['timeStamp'] >= start) & (tmp['timeStamp'] <= end)]
+
+        tmp = tmp.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
+        
+        tmp = tmp.reset_index()
+
+        return tmp
 
     def __fill_delay_for_without_actual_flt(self):
         print('fill delay for without actual flight time')
@@ -67,55 +102,50 @@ class output_predict:
         
     def __fill_area_according_to_gate(self):
         print('fill area according to the flight gate')
-        self.gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
-        self.gate.columns = ['gate', 'area']
-        self.gate['gate'] = self.gate['gate'].str.replace(' ', '')
-        self.gate['area'] = self.gate['area'].str.replace(' ', '')
-        self.gate = self.gate.set_index('gate')
+        gate = pd.read_csv(self.directory + './airport_gz_gates.csv')
+        gate.columns = ['gate', 'area']
+        gate['gate'] = gate['gate'].str.replace(' ', '')
+        gate['area'] = gate['area'].str.replace(' ', '')
+        gate = gate.set_index('gate')
 
-        tmp = ['W1', 'W2', 'W3', 'E1', 'E2', 'E3']
+        tmp = ['E1', 'E2']
         # record the number gate without area
         self.empty_count = 0
         # count each area scheduled plane number
         self.distribute = {'W1': 0, 'W2': 0, 'W3': 0, 'E1': 0, 'E2': 0, 'E3': 0}
         def func(x):
-            if x in self.gate.index:
-                self.distribute[self.gate.loc[x, 'area']] += 1
-                return self.gate.loc[x, 'area']
+            if x in gate.index:
+                self.distribute[gate.loc[x, 'area']] += 1
+                return gate.loc[x, 'area']
             else:
                 self.empty_count += 1
-                return tmp[np.random.randint(6)]
+                return tmp[np.random.randint(2)]
         self.sche['area'] = self.sche['gate'].apply(func)
 
 
     def __fill_passenger_number_according_statistic(self):
         print('fill passenger number according statistic')
-        self.passenger = pd.read_csv('./info/flight_passenger_num.csv')
-        self.passenger.columns = ['fid', 'num']
-        self.passenger['fid'] = self.passenger['fid'].str.replace(' ', '')
-        self.passenger = self.passenger.set_index('fid')
+        passenger = pd.read_csv('./info/flight_passenger_num.csv')
+        passenger.columns = ['fid', 'num']
+        passenger['fid'] = passenger['fid'].str.replace(' ', '')
+        passenger = passenger.set_index('fid')
 
         # get the mean and the std of the flight passenger num to fill the blank
-        std = self.passenger.std()
-        mean = self.passenger.mean()
+        std = passenger.std()['num']
+        mean = passenger.mean()['num']
 
         self.sum_flight = 0
         self.miss_passenger = 0
         self.miss_fid = []
         def get_number(x):
             self.sum_flight += 1
-            if x in self.passenger.index:
-                return self.passenger.loc[x, 'num']
+            if x in passenger.index:
+                return passenger.loc[x, 'num']
             else:
                 self.miss_fid.append(x)
                 self.miss_passenger += 1
                 # fill the empty data with the mean and std
                 tmp = std * np.random.randn() + mean
-                # tmp = 0
-                if tmp < 0:
-                    tmp = 1
-                elif tmp > 300:
-                    tmp = 300
                 return tmp
         self.sche['num'] = self.sche['fid'].apply(get_number)
 
@@ -152,17 +182,23 @@ class output_predict:
             tmp = tmp.append(spread_function(row))
 
         tmp = tmp.groupby([pd.Grouper(key='timeStamp', freq='1Min'), 'area']).sum()
-        self.output_predict = tmp.reset_index()
+        tmp = tmp.reset_index()
+        tmp = tmp[
+                (tmp['timeStamp'] >= self.date_start) & 
+                (tmp['timeStamp'] <= self.date_end)
+                ]
+
+        return tmp
 
     def visualize_sum_output(self, gran=1):
         gran = str(gran) + 'Min'
-        tmp = self.output_predict.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
+        tmp = self.rst.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
         tmp.plot()
         plt.show()
 
     def visualize_sum_output_for_each_area(self, gran=1):
         gran = str(gran) + 'Min'
-        tmp = self.output_predict.groupby('area')
+        tmp = self.rst.groupby('area')
 
         for key in tmp.groups:
             foo = tmp.get_group(key)
@@ -170,3 +206,9 @@ class output_predict:
             foo.plot()
             plt.title(key)
             plt.show()
+
+if __name__ == '__main__':
+    directory = './data1/'
+    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
+        directory = sys.argv[1]
+    op = output_predict('2016/09/10 00:00:00', '2016/09/15 00:00:00', directory)
