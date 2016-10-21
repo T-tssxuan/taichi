@@ -19,19 +19,13 @@ class input_predict:
         sdata['sft'] = sdata['sft'].add(pd.DateOffset(hours=8))
         sdata['gate'] = sdata['gate'].str.upper()
         sdata['gate'] = sdata['gate'].str.replace(' ', '')
-        sdata['gate'] = sdata['gate'].astype(str)
-        sdata['gate'] = sdata['gate'].apply(lambda x: x.split(',')[-1])
+        sdata['gate'] = sdata['gate'].str.split(',')[-1]
         self.sdata = sdata
         self.__bind_area_for_fid()
         del self.sdata['gate']
 
-        # init the predict base data
-        if category == 0:
-            self.rst_file_name = './info/checkin_predict.csv'
-            self.cdata = self.__init_checkin_data()
-        else:
-            self.rst_file_name = './info/security_predict.csv'
-            self.cdata = self.__init_security_data()
+        self.cdata = cdata
+
 
         pdata = pd.read_csv('./info/flight_passenger_num.csv')
         pdata.columns = ['fid', 'num']
@@ -44,7 +38,6 @@ class input_predict:
         self.pmean = pdata.mean()[0]
 
     def __init_security_data(self):
-        print('init the security data')
         path = directory + 'airport_gz_security_check_chusai.csv'
         data = pd.read_csv(path)
         del data['passenger_ID']
@@ -58,24 +51,13 @@ class input_predict:
         data = data[data['fid'].isin(sdata['fid'])]
 
         sdata = sdata.set_index('fid')
-        sdata = sdata.sort_values('sft')
+        del sdata['gate']
         
-        def func(x):
-            val = tmp.loc[x['fid'], 'sft']
-            if type(val) is pd.tslib.Timestamp:
-                return val
-            eles = val.values
-            for ele in eles:
-                if x['ct'] <= pd.to_datetime(ele) + pd.DateOffset(hours=5):
-                    return pd.to_datetime(ele)
-            return pd.to_datetime(eles[-1])
+        data['ft'] = data['fid'].apply(lambda x: sdata.loc[x, 'sft'])
 
-        data['ft'] = data.apply(func, axis=1)
-
-        return data[['fid', 'ft', 'ct']]
+        return data
 
     def __init_checkin_data(self):
-        print('init the checkin data')
         path = directory + 'airport_gz_departure_chusai.csv'
         data = pd.read_csv(path)
         del data['passenger_ID2']
@@ -92,7 +74,6 @@ class input_predict:
 
     # start/end: YYYY/MM/DD HH:MM:SS
     def get_predict_area(self, start, end, gran=10):
-        print('get the predict data base area')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
@@ -108,7 +89,6 @@ class input_predict:
 
 
     def get_predict_sum(self, start, end, gran=10):
-        print('get the sum predict data')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
         gran = str(gran) + 'Min'
@@ -126,10 +106,6 @@ class input_predict:
 
 
     def train(self, start, end):
-        print('training')
-        start = pd.to_datetime(start)
-        end = pd.to_datetime(end)
-
         train_data = self.__get_train_data()
         train_result = [[train_data[co].mean(), train_data[co].std()] 
                 for co in train_data.columns]
@@ -139,8 +115,7 @@ class input_predict:
         self.train_std = train_data.std()
         self.train_mean = train_data.mean()
 
-        rst = self.__init_rst(start, end)
-
+        rst = pd.DataFrame()
         for idx, row in self.sdata.iterrows():
             p_num = np.random.randn() * self.pstd + self.pmean
             if row['fid'] in self.pdata.index:
@@ -153,31 +128,12 @@ class input_predict:
         rst = rst.groupby(['timeStamp', 'area']).sum()
         rst = rst.sort_index()
         rst = rst.reset_index()
-        rst = rst[(rst['timeStamp'] >= start) & (rst['timeStamp'] <= end)]
         rst.to_csv(
-                self.rst_file_name,
+                './info/input_predict', 
                 columns=['timeStamp', 'area', 'num'], 
                 index=True
                 )
         self.rst = rst
-        print('finish training')
-
-    def __init_rst(self, start, end):
-        print('init rst content')
-        data = pd.DataFrame()
-
-        time_rng = pd.date_range(start, end, freq='1Min')
-        eles = ['E1', 'E2', 'E3', 'W1', 'W2', 'W3', 'EC', 'WC']
-        for ele in eles:
-            tmp = pd.DataFrame(
-                    np.array([
-                        time_rng,
-                        [ele for i in range(len(time_rng))],
-                        [0 for i in range(len(time_rng))]
-                        ]).transpose()
-                    )
-            data = data.append(tmp)
-        return data
 
     def __spread(self, sft, area, p_num):
         # print(str(p_num) + ' ' + str(type(p_num)))
@@ -207,7 +163,6 @@ class input_predict:
 
 
     def __get_train_data(self):
-        print('get train data')
         data = self.cdata.copy()
 
         idx = 0
@@ -266,5 +221,5 @@ class input_predict:
         self.sdata['area'] = self.sdata['gate'].apply(func)
 
 if __name__ == '__main__':
-    ip = input_predict(0, './data1/')
-    ip.train('2015/09/10 00:00:00', '2015/09/15 00:00:00')
+    ip = input_predict('./data1/')
+    ip.train('', '')
