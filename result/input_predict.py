@@ -1,13 +1,40 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import time
+import datetime
 
 class input_predict:
     '''
     This class is using to predict the input of the airport based on the check 
     in information of the airport.
+    Atrributes:
+        sdata: the scheduled info
+        cdata: the base data need to process
+        pdata: the flight passenger information
+        w_ratio: the w* keep ratio
+        e_ratio: the e* keep ratio
+    Dependencies:
+        directory/airport_gz_security_check_chusai.csv
+        directory/airport_gz_departure_chusai.csv
+        directory/airport_gz_flights_chusai.csv
+        directory/airport_gz_gates.csv
+        ./info/flight_passenger_num.csv
+    Output Path:
+        checkin: ./info/checkin_predict.csv
+        security: ./info/security_predict.csv
+
     '''
     def __init__(self, category, directory):
+        '''
+        category 0: processing the checkin data.
+        category 1: processing the security data
+        directory: the initial data source
+        '''
+        self.w_ratio = 0.6252504
+        self.e_ratio = 0.560917
+
+
         self.directory = directory
         path = directory + 'airport_gz_flights_chusai.csv'
         sdata = pd.read_csv(path)
@@ -44,6 +71,9 @@ class input_predict:
         self.pmean = pdata.mean()[0]
 
     def __init_security_data(self):
+        '''
+        read the security data into memory and make it to the consistce form
+        '''
         print('init the security data')
         path = directory + 'airport_gz_security_check_chusai.csv'
         data = pd.read_csv(path)
@@ -60,6 +90,7 @@ class input_predict:
         sdata = sdata.set_index('fid')
         sdata = sdata.sort_values('sft')
         
+        # fill the security data with the nearest correspond flight
         def func(x):
             val = tmp.loc[x['fid'], 'sft']
             if type(val) is pd.tslib.Timestamp:
@@ -75,6 +106,9 @@ class input_predict:
         return data[['fid', 'ft', 'ct']]
 
     def __init_checkin_data(self):
+        '''
+        init the checkin data
+        '''
         print('init the checkin data')
         path = directory + 'airport_gz_departure_chusai.csv'
         data = pd.read_csv(path)
@@ -92,6 +126,9 @@ class input_predict:
 
     # start/end: YYYY/MM/DD HH:MM:SS
     def get_predict_area(self, start, end, gran=10):
+        '''
+        get the predict data base the area and the start, end of time
+        '''
         print('get the predict data base area')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
@@ -108,6 +145,9 @@ class input_predict:
 
 
     def get_predict_sum(self, start, end, gran=10):
+        '''
+        get the predict data with summary of all
+        '''
         print('get the sum predict data')
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
@@ -127,6 +167,9 @@ class input_predict:
 
     def train(self, start, end):
         print('training')
+        print(time.strftime('%H:%M:%S'))
+        time_start = time.time()
+
         start = pd.to_datetime(start)
         end = pd.to_datetime(end)
 
@@ -139,8 +182,9 @@ class input_predict:
         self.train_std = train_data.std()
         self.train_mean = train_data.mean()
 
-        rst = self.__init_rst(start, end)
+        rst = pd.DataFrame()
 
+        print('begin predict')
         for idx, row in self.sdata.iterrows():
             p_num = np.random.randn() * self.pstd + self.pmean
             if row['fid'] in self.pdata.index:
@@ -148,12 +192,18 @@ class input_predict:
 
             tmp = self.__spread(row['sft'], row['area'], p_num)
             rst = rst.append(tmp)
+        print('finish predict')
 
         rst['timeStamp'] = pd.to_datetime(rst['timeStamp'])
+        
+        rst = self.__fill_rst(rst, start, end)
+
         rst = rst.groupby(['timeStamp', 'area']).sum()
         rst = rst.sort_index()
         rst = rst.reset_index()
         rst = rst[(rst['timeStamp'] >= start) & (rst['timeStamp'] <= end)]
+        rst = self.__set_ec_wc_num(rst)
+
         rst.to_csv(
                 self.rst_file_name,
                 columns=['timeStamp', 'area', 'num'], 
@@ -161,9 +211,36 @@ class input_predict:
                 )
         self.rst = rst
         print('finish training')
+        print(time.strftime('%H:%M:%S'))
+        seconds_count = time.time() - time_start
+        print("total: " + str(datetime.timedelta(seconds=seconds_count)))
 
-    def __init_rst(self, start, end):
-        print('init rst content')
+    def __set_ec_wc_num(self, rst):
+        print('set EC WC area num')
+        tmp = rst.set_index(['timeStamp', 'area'])
+        def func(x):
+            val = 0
+            if x['area'] == 'EC':
+                val += tmp.loc[x['timeStamp'], 'E1', 'num']
+                val += tmp.loc[x['timeStamp'], 'E2', 'num']
+                val += tmp.loc[x['timeStamp'], 'E3', 'num']
+                return val * (1 - self.e_ratio)
+            elif x['area'] == 'WC':
+                val += tmp.loc[x['timeStamp'], 'W1', 'num']
+                val += tmp.loc[x['timeStamp'], 'W2', 'num']
+                val += tmp.loc[x['timeStamp'], 'W3', 'num']
+                return val * (1 - self.w_ratio)
+            elif x['area'] == 'W1' or x['area'] == 'W2' or x['area'] == 'W3':
+                return x['num'] * self.w_ratio
+            else:
+                return x['num'] * self.e_ratio
+
+        rst['num'] = rst.apply(func, axis=1)
+        return rst
+
+
+    def __fill_rst(self, rst, start, end):
+        print('fill rst content')
         data = pd.DataFrame()
 
         time_rng = pd.date_range(start, end, freq='1Min')
@@ -177,7 +254,9 @@ class input_predict:
                         ]).transpose()
                     )
             data = data.append(tmp)
-        return data
+        data.columns = ['timeStamp', 'area', 'num']
+        rst = rst.append(data)
+        return rst
 
     def __spread(self, sft, area, p_num):
         # print(str(p_num) + ' ' + str(type(p_num)))
