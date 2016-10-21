@@ -21,6 +21,9 @@ class output_predict:
         ./info/output_predic.csv
     '''
     def __init__(self, start, end, directory):
+        self.w_ratio = 0.6252504
+        self.e_ratio = 0.560917
+
         self.directory = directory
         path = self.directory + 'airport_gz_flights_chusai.csv'
 
@@ -47,7 +50,10 @@ class output_predict:
         del self.sche['gate']
         del self.sche['fid']
 
-        self.rst = self.__get_output_predict_for_each_area()
+        rst = self.__get_output_predict_for_each_area()
+
+        self.rst = self.__set_ec_wc_num(rst)
+
         self.rst.to_csv(
                 './info/output_predict.csv', 
                 columns=['timeStamp', 'num', 'area'],
@@ -65,6 +71,29 @@ class output_predict:
                 columns=['timeStamp', 'num'],
                 index=False
                 )
+
+    def __set_ec_wc_num(self, rst):
+        print('set EC WC area num')
+        tmp = rst.set_index(['timeStamp', 'area'])
+        def func(x):
+            val = 0
+            if x['area'] == 'EC':
+                val += tmp.loc[x['timeStamp'], 'E1']['num']
+                val += tmp.loc[x['timeStamp'], 'E2']['num']
+                val += tmp.loc[x['timeStamp'], 'E3']['num']
+                return val * (1 - self.e_ratio)
+            elif x['area'] == 'WC':
+                val += tmp.loc[x['timeStamp'], 'W1']['num']
+                val += tmp.loc[x['timeStamp'], 'W2']['num']
+                val += tmp.loc[x['timeStamp'], 'W3']['num']
+                return val * (1 - self.w_ratio)
+            elif x['area'] == 'W1' or x['area'] == 'W2' or x['area'] == 'W3':
+                return x['num'] * self.w_ratio
+            else:
+                return x['num'] * self.e_ratio
+
+        rst['num'] = rst.apply(func, axis=1)
+        return rst
 
     def get_predict_sum(self, start, end, gran=10):
         '''
