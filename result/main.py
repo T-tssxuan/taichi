@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from generate_predict import generate_predict
 from generate_ap_ratio_info import  generate_ap_ratio_info
-# from generate_base_data import generate_base_data
+from generate_base_data import generate_base_data
 from generate_flight_passenger import generate_flight_passenger
 from generate_pure_variation import generate_pure_variation
 from output_predict import output_predict
