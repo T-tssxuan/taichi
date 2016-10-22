@@ -3,7 +3,7 @@ code/data1/*
 code/data2/*
 result/data1/*
 result/data2/*
-result/info/*
+result/info/*.*
 *.ipynb
 *.pyc
 result/log/*
