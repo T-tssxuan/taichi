@@ -5,8 +5,8 @@ from log import debug
 
 def generate_predict(directory, start, end, gran=10):
     debug('start: ' + str(start) + ' end: ' + str(end) + ' gran' + str(gran))
-    start = pb.to_datetime(start)
-    end = pb.to_datetime(end)
+    start = pd.to_datetime(start)
+    end = pd.to_datetime(end)
 
     # the result colums name
     slice_column = 'slice' + str(gran) + 'min'
@@ -18,7 +18,7 @@ def generate_predict(directory, start, end, gran=10):
     net_in = pd.read_csv('./info/variation_data.csv')
     net_in['timeStamp'] = pd.to_datetime(net_in['timeStamp'])
     net_in = net_in.groupby(
-            ['area', pd.Grouper(key='timeStamp', freq=gran)]
+            ['area', pd.Grouper(key='timeStamp', freq=str(gran) + 'Min')]
             ).sum()
     net_in = net_in.reset_index()
 

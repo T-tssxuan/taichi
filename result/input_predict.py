@@ -32,6 +32,8 @@ class input_predict:
         category 1: processing the security data
         directory: the initial data source
         '''
+        debug(' input_predict category: ' + str(category) + 
+                ' directory: ' + str(directory))
         self.w_ratio = 0.6252504
         self.e_ratio = 0.560917
 
@@ -172,8 +174,8 @@ class input_predict:
 
 
     def train(self, start, end):
-        debug('training')
-        debug(time.strftime('%H:%M:%S'))
+        debug('training start: ' + str(start) + ' end: ' + str(end))
+
         time_start = time.time()
 
         start = pd.to_datetime(start)
@@ -232,7 +234,6 @@ class input_predict:
                 )
 
         debug('finish training')
-        dabug(time.strftime('%H:%M:%S'))
         seconds_count = time.time() - time_start
         debug("total: " + str(datetime.timedelta(seconds=seconds_count)))
 

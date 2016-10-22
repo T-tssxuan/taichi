@@ -6,7 +6,7 @@ import os
 from log import debug
 
 def generate_flight_passenger(directory):
-    debug('flight passenger')
+    debug('flight passenger directory: ' + str(directory))
     path = directory + 'airport_gz_departure_chusai.csv'
 
     data = pd.read_csv(path)

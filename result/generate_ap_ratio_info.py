@@ -7,7 +7,7 @@ from log import debug
 
 
 def generate_ap_ratio_info(directory):
-    debug('generat ap ratio info in: ' + str(directory))
+    debug('generat ap ratio info directory: ' + str(directory))
 
     path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'
     data = pd.read_csv(path)

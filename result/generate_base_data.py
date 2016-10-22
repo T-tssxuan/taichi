@@ -6,7 +6,8 @@ from log import debug
 
 
 def generate_base_data(directory, epoch):
-    debug('generate the base data at ' + str(epoch))
+    debug('generate the base data directory: ' + str(directory) + ' epoch: ' +
+            str(epoch))
 
     epoch = pd.to_datetime(epoch)
     path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'

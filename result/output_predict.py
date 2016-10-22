@@ -22,8 +22,14 @@ class output_predict:
         ./info/output_predic.csv
     '''
     def __init__(self, start, end, directory):
+        debug('output_predict start: ' + str(start) + ' end: ' + str(end) + 
+                ' directory: ' + str(directory))
+
         self.w_ratio = 0.6252504
         self.e_ratio = 0.560917
+
+        debug('output_predict w_ratio: ' + str(self.w_ratio) + 
+                ' e_ratio: ' + self.e_ratio)
 
         self.directory = directory
         path = self.directory + 'airport_gz_flights_chusai.csv'
