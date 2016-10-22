@@ -6,3 +6,4 @@ result/data2/*
 result/info/*
 *.ipynb
 *.pyc
+result/log/*
