@@ -7,3 +7,4 @@ result/info/*
 *.ipynb
 *.pyc
 result/log/*
+*.csv
