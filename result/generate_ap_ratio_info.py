@@ -4,8 +4,6 @@ import sys
 import os
 from log import debug
 
-
-
 def generate_ap_ratio_info(directory):
     debug('generat ap ratio info directory: ' + str(directory))
 
@@ -15,7 +13,8 @@ def generate_ap_ratio_info(directory):
     # preprocess data
     del data['timeStamp']
 
-    data['WIFIAPTag'] = data['WIFIAPTag'].str.upper().replace(' ', '')
+    data['WIFIAPTag'] = data['WIFIAPTag'].str.upper()
+    data['WIFIAPTag'] = data['WIFIAPTag'].str.replace(' ', '')
     data['area'] = data['WIFIAPTag'].apply(lambda x: x[0:2])
 
     # get tag sum

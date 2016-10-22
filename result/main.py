@@ -9,7 +9,9 @@ from generate_pure_variation import generate_pure_variation
 from output_predict import output_predict
 from input_predict import input_predict
 from log import log
+from datasrc import datasrc
 from multiprocessing import Process
+import time
 
 def p_generate_output_predict(range_start, range_end, directory):
     log('start p_generate_output_predict process')
@@ -37,6 +39,8 @@ def p_generate_base_data(directory, start):
 if __name__ == '__main__':
     directory = './data1/'
     fmt = '%Y-%m-%d-%H-%M-%S'
+
+    log(datasrc.get_info_dir())
 
     # get the dirtory of source data need to predicting
     if len(sys.argv) >= 2:

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from log import debug
+from datasrc import datasrc
 
 class output_predict:
     '''
@@ -160,6 +161,7 @@ class output_predict:
 
 
     def __fill_passenger_number_according_statistic(self):
+        print(datasrc.get_info_dir())
         debug('fill passenger number according statistic')
         passenger = pd.read_csv('./info/flight_passenger_num.csv')
         passenger.columns = ['fid', 'num']
@@ -191,7 +193,9 @@ class output_predict:
 
         columns_name = ['timeStamp', 'num', 'area']
 
-        offset = pd.DateOffset(minutes=20)
+        spread_range = 60
+
+        offset = pd.DateOffset(minutes=spread_range)
 
         # generate output info for each minutes in the given time range
         rgn = pd.date_range(self.date_start, self.date_end, freq='Min')
@@ -205,11 +209,11 @@ class output_predict:
 
         # the spread function
         def gen_num(idx, num):
-            return num / 20
+            return num / spread_range
 
         # spread the passenger number to a time range
         def spread_function(row):
-            trg = pd.date_range(row['aft'] - offset, periods=20, freq='Min')
+            trg = pd.date_range(row['aft'] - offset, row['aft'], freq='Min')
             area = row['area']
             num = row['num']
             values = [[trg[idx], gen_num(idx, num), area] for idx in range(20)]
