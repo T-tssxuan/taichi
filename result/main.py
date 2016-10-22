@@ -9,13 +9,25 @@ from generate_pure_variation import generate_pure_variation
 from output_predict import output_predict
 from input_predict import input_predict
 from log import log
+from multiprocessing import Process
+
+def generate_output_predict(range_start, range_end, directory):
+    log('start generate_output_predict process')
+    log('range_start: ' + range_start + ' range_end: ' + range_end +
+            ' directory: ' + directory)
+    op = output_predict(range_start, range_end, directory)
+
+def generate_input_predict(range_start, range_end, directory, category):
+    log('start generate_input_predict process')
+    log('range_start: ' + range_start + ' range_end: ' + range_end +
+            ' directory: ' + directory + ' category: ' + str(category))
+    ip = input_predict(0, directory)
+    ip.train(range_start, range_end)
 
 
 if __name__ == '__main__':
-    directory = './data2/'
+    directory = './data1/'
     fmt = '%Y-%m-%d-%H-%M-%S'
-
-
 
     # get the dirtory of source data need to predicting
     if len(sys.argv) >= 2:
@@ -59,17 +71,33 @@ if __name__ == '__main__':
 
     # generate airport output predict for each area
     log('genrate output predict for each area')
-    op = output_predict(range_start, range_end, directory)
+    p_out = Process(
+            target=generate_output_predict, 
+            args=(range_start, range_end, directory)
+            )
+    p_out.start()
 
     # generate airport checkin input predict for each area
     log('generate checkin predict')
-    cip = input_predict(0, directory)
-    cip.train(range_start, range_end)
+    p_cip = Process(
+            target=generate_input_predict,
+            args=(range_start, range_end, directory, 0)
+            )
+    p_cip.start()
 
     # generate airport security predict for each area
     log('generate security predict')
-    sip = input_predict(1, directory)
-    sip.train(range_start, range_end)
+    p_sip = Process(
+            target=generate_input_predict,
+            args=(range_start, range_end, directory, 1)
+            )
+    p_sip.start()
+
+    p_out.join()
+    p_cip.join()
+    p_sip.join()
+
+    log('finish processes')
 
     # generate purely variation for each area
     log('generate pure variation predict')

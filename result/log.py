@@ -12,16 +12,22 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 def log(info):
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
     rst = bcolors.OKGREEN
     rst += time.strftime('%H:%M:%S') + ' '
+    rst += str(module.__name__) + '-->'
     rst += str(inspect.stack()[1][3]) + ': '
     rst += str(info)
     rst += bcolors.ENDC
     print(rst)
 
 def debug(info):
+    frame = inspect.stack()[1]
+    module = inspect.getmodule(frame[0])
     rst = bcolors.OKBLUE
     rst += time.strftime('%H:%M:%S') + ' '
+    rst += str(module.__name__) + '-->'
     rst += str(inspect.stack()[1][3]) + ': '
     rst += str(info)
     rst += bcolors.ENDC
