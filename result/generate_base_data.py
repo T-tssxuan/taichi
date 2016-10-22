@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import sys
 import os
+from generate_ap_ratio_info import generate_ap_ratio_info
 from log import debug
 
 
@@ -29,7 +30,9 @@ def generate_base_data(directory, epoch):
 
     base_data['area'] = base_data['WIFIAPTag'].apply(lambda x: x[0:2])
 
-    ap_ratio_data = pd.read_csv('./info/ap_ratio_data.csv')
+    # generate each ap user ratio in their area
+    debug('generate ap ratio info')
+    ap_ratio_data = generate_ap_ratio_info(directory)
 
     ap_ratio_data = ap_ratio_data.set_index('WIFIAPTag')
 
@@ -42,8 +45,6 @@ def generate_base_data(directory, epoch):
     columns=['area', 'WIFIAPTag', 'passengerCount', 'ratio'],
     index=False
     )
-
-    return base_data
 
 if __name__ == '__main__':
     directory = './data1/'

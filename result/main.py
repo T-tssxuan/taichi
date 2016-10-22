@@ -11,18 +11,24 @@ from input_predict import input_predict
 from log import log
 from multiprocessing import Process
 
-def generate_output_predict(range_start, range_end, directory):
-    log('start generate_output_predict process')
+def p_generate_output_predict(range_start, range_end, directory):
+    log('start p_generate_output_predict process')
     log('range_start: ' + range_start + ' range_end: ' + range_end +
             ' directory: ' + directory)
     op = output_predict(range_start, range_end, directory)
 
-def generate_input_predict(range_start, range_end, directory, category):
-    log('start generate_input_predict process')
+def p_generate_input_predict(range_start, range_end, directory, category):
+    log('start p_generate_input_predict process')
     log('range_start: ' + range_start + ' range_end: ' + range_end +
             ' directory: ' + directory + ' category: ' + str(category))
     ip = input_predict(0, directory)
     ip.train(range_start, range_end)
+
+def p_generate_base_data(directory, start):
+    log('start p_generate_base_data')
+    log('directory: ' + directory + ' start: ' + str(start))
+    generate_base_data(directory, start)
+
 
 
 if __name__ == '__main__':
@@ -65,14 +71,10 @@ if __name__ == '__main__':
     log('generate the passenger number')
     generate_flight_passenger(directory)
 
-    # generate each ap user ratio in their area
-    log('generate ap ratio info')
-    generate_ap_ratio_info(directory)
-
     # generate airport output predict for each area
     log('genrate output predict for each area')
     p_out = Process(
-            target=generate_output_predict, 
+            target=p_generate_output_predict, 
             args=(range_start, range_end, directory)
             )
     p_out.start()
@@ -80,7 +82,7 @@ if __name__ == '__main__':
     # generate airport checkin input predict for each area
     log('generate checkin predict')
     p_cip = Process(
-            target=generate_input_predict,
+            target=p_generate_input_predict,
             args=(range_start, range_end, directory, 0)
             )
     p_cip.start()
@@ -88,14 +90,23 @@ if __name__ == '__main__':
     # generate airport security predict for each area
     log('generate security predict')
     p_sip = Process(
-            target=generate_input_predict,
+            target=p_generate_input_predict,
             args=(range_start, range_end, directory, 1)
             )
     p_sip.start()
 
+    # generate the base data for prediction
+    log('generate the base data')
+    p_base_data = Process(
+            target=p_generate_base_data,
+            args=(directory, start)
+            )
+    p_base_data.start()
+
     p_out.join()
     p_cip.join()
     p_sip.join()
+    p_base_data.join()
 
     log('finish processes')
 
@@ -103,9 +114,6 @@ if __name__ == '__main__':
     log('generate pure variation predict')
     generate_pure_variation()
 
-    # # generate the base data for prediction
-    # log('generate the base data')
-    # generate_base_data(directory, '2016/09/14 14:59:00')
 
     log('predict the result')
     generate_predict(directory, start, end)

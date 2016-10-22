@@ -41,6 +41,7 @@ def generate_ap_ratio_info(directory):
     columns=['area', 'WIFIAPTag', 'ratio'], 
     index=False
     )
+    return data
 
 if __name__ == '__main__':
     directory = './data1/'

@@ -12,9 +12,10 @@ def generate_predict(directory, start, end, gran=10):
     slice_column = 'slice' + str(gran) + 'min'
     columns = ['passengerCount', 'WIFIAPTag', slice_column]
 
-    # generate the base data
-    base_data = generate_base_data(directory, start)
+    # get the base data
+    base_data = pd.read_csv('./info/base_data.csv')
 
+    # get the net in data
     net_in = pd.read_csv('./info/variation_data.csv')
     net_in['timeStamp'] = pd.to_datetime(net_in['timeStamp'])
     net_in = net_in.groupby(
@@ -77,9 +78,11 @@ def generate_predict(directory, start, end, gran=10):
     result['slice10min'] = pd.to_datetime(result['slice10min'])
     # set the granularity to the gran
     result = result.groupby(
-            ['WIFIAPTag', pd.Grouper(key='slice10min', freq=str(gran) + 'Min')]
+            ['WIFIAPTag', pd.Grouper(key=slice_column, freq=str(gran) + 'Min')]
             ).sum()
     result = result.reset_index()
+    result[slice_column] = result[slice_column].apply(date_func)
+    result['passengerCount'] = result['passengerCount'] / 10
     result = result[columns]
 
     result.to_csv('./info/result.csv', columns=columns, index=False)
