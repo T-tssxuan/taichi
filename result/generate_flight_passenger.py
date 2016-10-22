@@ -4,8 +4,12 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from log import debug
+from datasrc import datasrc
 
-def generate_flight_passenger(directory):
+def generate_flight_passenger():
+    directory = datasrc.get_data_dir()
+    info_dir = datasrc.get_info_dir()
+
     debug('flight passenger directory: ' + str(directory))
     path = directory + 'airport_gz_departure_chusai.csv'
 
@@ -35,7 +39,7 @@ def generate_flight_passenger(directory):
     data.columns = ['flight_ID', 'num']
 
     data.to_csv(
-    './info/flight_passenger_num.csv', 
+    info_dir + 'flight_passenger_num.csv', 
     columns=['flight_ID', 'num'],
     index=False
     )

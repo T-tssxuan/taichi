@@ -4,9 +4,12 @@ import sys
 import os
 from generate_ap_ratio_info import generate_ap_ratio_info
 from log import debug
+from datasrc import datasrc
 
+def generate_base_data(epoch):
+    directory = datasrc.get_data_dir()
+    info_dir = datasrc.get_info_dir()
 
-def generate_base_data(directory, epoch):
     debug('generate the base data directory: ' + str(directory) + ' epoch: ' +
             str(epoch))
 
@@ -32,7 +35,7 @@ def generate_base_data(directory, epoch):
 
     # generate each ap user ratio in their area
     debug('generate ap ratio info')
-    ap_ratio_data = generate_ap_ratio_info(directory)
+    ap_ratio_data = generate_ap_ratio_info()
 
     ap_ratio_data = ap_ratio_data.set_index('WIFIAPTag')
 
@@ -41,15 +44,11 @@ def generate_base_data(directory, epoch):
     base_data['ratio'] = base_data['WIFIAPTag'].apply(func)
 
     base_data.to_csv(
-    './info/base_data.csv', 
+    info_dir + 'base_data.csv', 
     columns=['area', 'WIFIAPTag', 'passengerCount', 'ratio'],
     index=False
     )
 
 if __name__ == '__main__':
-    directory = './data1/'
     epoch = pd.to_datetime('2016/09/14 15:00:00')
-    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
-        directory = sys.argv[1]
-
-    generate_base_data(directory, epoch)
+    generate_base_data(epoch)

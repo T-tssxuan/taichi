@@ -22,9 +22,11 @@ class output_predict:
     result:
         ./info/output_predic.csv
     '''
-    def __init__(self, start, end, directory):
+    def __init__(self, start, end):
+        self.directory = datasrc.get_data_dir()
+        self.info_dir = datasrc.get_info_dir()
         debug('output_predict start: ' + str(start) + ' end: ' + str(end) + 
-                ' directory: ' + str(directory))
+                ' directory: ' + str(self.directory))
 
         self.w_ratio = 0.6252504
         self.e_ratio = 0.560917
@@ -32,7 +34,6 @@ class output_predict:
         debug('output_predict w_ratio: ' + str(self.w_ratio) + 
                 ' e_ratio: ' + str(self.e_ratio))
 
-        self.directory = directory
         path = self.directory + 'airport_gz_flights_chusai.csv'
 
         self.date_start = pd.to_datetime(start)
@@ -63,7 +64,7 @@ class output_predict:
         self.rst = self.__set_ec_wc_num(rst)
 
         self.rst.to_csv(
-                './info/output_predict.csv', 
+                self.info_dir + 'output_predict.csv', 
                 columns=['timeStamp', 'num', 'area'],
                 index=False
                 )
@@ -75,7 +76,7 @@ class output_predict:
         sum_rst = sum_rst.groupby(pd.Grouper(key='timeStamp', freq=gran)).sum()
         sum_rst = sum_rst.reset_index()
         sum_rst.to_csv(
-                './info/output_sum_predict.csv',
+                self.info_dir + 'output_sum_predict.csv',
                 columns=['timeStamp', 'num'],
                 index=False
                 )
@@ -161,9 +162,8 @@ class output_predict:
 
 
     def __fill_passenger_number_according_statistic(self):
-        print(datasrc.get_info_dir())
         debug('fill passenger number according statistic')
-        passenger = pd.read_csv('./info/flight_passenger_num.csv')
+        passenger = pd.read_csv(self.info_dir + 'flight_passenger_num.csv')
         passenger.columns = ['fid', 'num']
         passenger['fid'] = passenger['fid'].str.replace(' ', '')
         passenger = passenger.set_index('fid')

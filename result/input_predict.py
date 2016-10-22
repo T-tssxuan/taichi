@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import time
 import datetime
 from log import debug
+from datasrc import datasrc
 
 class input_predict:
     '''
@@ -26,22 +27,24 @@ class input_predict:
         security: ./info/security_predict.csv
 
     '''
-    def __init__(self, category, directory):
+    def __init__(self, category):
         '''
         category 0: processing the checkin data.
         category 1: processing the security data
         directory: the initial data source
         '''
+        self.directory = datasrc.get_data_dir()
+        self.info_dir = datasrc.get_info_dir()
+
         debug(' input_predict category: ' + str(category) + 
-                ' directory: ' + str(directory))
+                ' directory: ' + str(self.directory))
         self.w_ratio = 0.6252504
         self.e_ratio = 0.560917
 
         self.category = category
 
-        self.directory = directory
 
-        path = directory + 'airport_gz_flights_chusai.csv'
+        path = self.directory + 'airport_gz_flights_chusai.csv'
         sdata = pd.read_csv(path)
         del sdata['actual_flt_time']
         sdata.columns = ['fid', 'sft', 'gate']
@@ -59,15 +62,15 @@ class input_predict:
 
         # init the predict base data
         if category == 0:
-            self.rst_file_name = './info/checkin_predict.csv'
-            self.rst_sum_file_name = './info/checkin_sum_predict.csv'
+            self.rst_file_name = self.info_dir + 'checkin_predict.csv'
+            self.rst_sum_file_name = self.info_dir + 'checkin_sum_predict.csv'
             self.cdata = self.__init_checkin_data()
         else:
-            self.rst_file_name = './info/security_predict.csv'
-            self.rst_sum_file_name = './info/security_sum_predict.csv'
+            self.rst_file_name = self.info_dir + 'security_predict.csv'
+            self.rst_sum_file_name = self.info_dir + 'security_sum_predict.csv'
             self.cdata = self.__init_security_data()
 
-        pdata = pd.read_csv('./info/flight_passenger_num.csv')
+        pdata = pd.read_csv(self.info_dir + 'flight_passenger_num.csv')
         pdata.columns = ['fid', 'num']
         pdata['fid'] = pdata['fid'].str.replace(' ', '')
         pdata = pdata.set_index('fid')

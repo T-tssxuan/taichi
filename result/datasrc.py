@@ -4,9 +4,11 @@ import time
 class datasrc:
     info = ""
     data = "./data1/"
+    ratio = '0.5'
+    cur_time = time.strftime('%Y-%m-%d-%H-%M-%S')
     def get_info_dir():
         if datasrc.info == "":
-            datasrc.info = 'info-' + time.strftime('%Y-%m-%d-%H-%M-%S')
+            datasrc.info = './tmp/info-' + datasrc.cur_time + '/'
             os.mkdir(datasrc.info)
         return datasrc.info
 
@@ -15,3 +17,10 @@ class datasrc:
 
     def set_data_dir(dirname):
         datasrc.data = dirname
+
+    def get_result_dir():
+        s = 'info/result-' + datasrc.cur_time + '-' + str(datasrc.ratio) + '.csv'
+        return s
+
+    def get_wifi_ratio():
+        return datasrc.ratio

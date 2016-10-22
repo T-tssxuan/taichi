@@ -2,9 +2,12 @@ import pandas as pd
 import numpy as np
 from generate_base_data import generate_base_data
 from log import debug
+from datasrc import datasrc
 import time
 
-def generate_predict(directory, start, end, gran=10):
+def generate_predict(start, end, gran=10):
+    info_dir = datasrc.get_info_dir()
+
     debug('start: ' + str(start) + ' end: ' + str(end) + ' gran' + str(gran))
     start = pd.to_datetime(start)
     end = pd.to_datetime(end)
@@ -14,10 +17,10 @@ def generate_predict(directory, start, end, gran=10):
     columns = ['passengerCount', 'WIFIAPTag', slice_column]
 
     # get the base data
-    base_data = pd.read_csv('./info/base_data.csv')
+    base_data = pd.read_csv(info_dir + 'base_data.csv')
 
     # get the net in data
-    net_in = pd.read_csv('./info/variation_data.csv')
+    net_in = pd.read_csv(info_dir + 'variation_data.csv')
     net_in['timeStamp'] = pd.to_datetime(net_in['timeStamp'])
     net_in = net_in.groupby(
             ['area', pd.Grouper(key='timeStamp', freq='1Min')]
@@ -86,14 +89,13 @@ def generate_predict(directory, start, end, gran=10):
     result['passengerCount'] = result['passengerCount'] / 10
     result = result[columns]
 
-    file_name = './info/result--' + time.strftime('%Y-%m-%d-%H-%M-%S') + '.csv'
+    file_name = datasrc.get_result_dir()
     result.to_csv(file_name, columns=columns, index=False)
     return result
 
 
 if __name__ == '__main__':
-    directory = './data1/'
     start = '2016/09/14 15:00:00'
     end = '2016/09/14 18:00:00'
-    aup = generate_predict(directory, start, end)
+    aup = generate_predict(start, end)
     # ap_user_predict.generate_predict()

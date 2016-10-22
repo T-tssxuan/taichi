@@ -3,8 +3,12 @@ import numpy as np
 import sys
 import os
 from log import debug
+from datasrc import datasrc
 
-def generate_ap_ratio_info(directory):
+def generate_ap_ratio_info():
+    directory = datasrc.get_data_dir()
+    info_dir = datasrc.get_info_dir()
+
     debug('generat ap ratio info directory: ' + str(directory))
 
     path = directory + 'WIFI_AP_Passenger_Records_chusai.csv'
@@ -36,14 +40,11 @@ def generate_ap_ratio_info(directory):
 
     # write to file
     data.to_csv(
-    './info/ap_ratio_data.csv', 
+    info_dir + 'ap_ratio_data.csv', 
     columns=['area', 'WIFIAPTag', 'ratio'], 
     index=False
     )
     return data
 
 if __name__ == '__main__':
-    directory = './data1/'
-    if len(sys.argv) >= 2 and os.path.exists(sys.argv[1]):
-        directory = sys.argv[1]
-    generate_ap_ratio_info(directory)
+    generate_ap_ratio_info()

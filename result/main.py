@@ -13,25 +13,24 @@ from datasrc import datasrc
 from multiprocessing import Process
 import time
 
-def p_generate_output_predict(range_start, range_end, directory):
+def p_generate_output_predict(range_start, range_end):
     log('start p_generate_output_predict process')
-    log('range_start: ' + range_start + ' range_end: ' + range_end +
-            ' directory: ' + directory)
-    op = output_predict(range_start, range_end, directory)
+    log('range_start: ' + range_start + ' range_end: ' + range_end)
+    op = output_predict(range_start, range_end)
     log('finish p_generate_output_predict')
 
-def p_generate_input_predict(range_start, range_end, directory, category):
+def p_generate_input_predict(range_start, range_end, category):
     log('start p_generate_input_predict process')
     log('range_start: ' + range_start + ' range_end: ' + range_end +
-            ' directory: ' + directory + ' category: ' + str(category))
-    ip = input_predict(0, directory)
+            ' category: ' + str(category))
+    ip = input_predict(category)
     ip.train(range_start, range_end)
     log('finish p_generate_input_predict')
 
-def p_generate_base_data(directory, start):
+def p_generate_base_data(start):
     log('start p_generate_base_data')
-    log('directory: ' + directory + ' start: ' + str(start))
-    generate_base_data(directory, start)
+    log('start: ' + str(start))
+    generate_base_data(start)
     log('finish p_generate_base_data')
 
 
@@ -67,6 +66,7 @@ if __name__ == '__main__':
         else:
             print('Please input time in the form: YYYY-MM-DD-HH-MM-SS')
 
+    datasrc.set_data_dir(directory)
     log('directory: ' + directory)
     log('start: ' + start + ' end: ' + end)
     log('range_start: ' + range_start + ' range_end: ' + range_end)
@@ -74,15 +74,15 @@ if __name__ == '__main__':
     start = pd.to_datetime(start, format=fmt)
     end = pd.to_datetime(end, format=fmt)
 
-    # # generate the pasenger number stastistic info for each flight id
-    # log('generate the passenger number')
-    # generate_flight_passenger(directory)
+    # generate the pasenger number stastistic info for each flight id
+    log('generate the passenger number')
+    generate_flight_passenger()
 
     # generate airport output predict for each area
     log('genrate output predict for each area')
     p_out = Process(
             target=p_generate_output_predict, 
-            args=(range_start, range_end, directory)
+            args=(range_start, range_end)
             )
     p_out.start()
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
     log('generate checkin predict')
     p_cip = Process(
             target=p_generate_input_predict,
-            args=(range_start, range_end, directory, 0)
+            args=(range_start, range_end, 0)
             )
     p_cip.start()
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     log('generate security predict')
     p_sip = Process(
             target=p_generate_input_predict,
-            args=(range_start, range_end, directory, 1)
+            args=(range_start, range_end, 1)
             )
     p_sip.start()
 
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     log('generate the base data')
     p_base_data = Process(
             target=p_generate_base_data,
-            args=(directory, start)
+            args=(start, )
             )
     p_base_data.start()
 
@@ -123,6 +123,6 @@ if __name__ == '__main__':
 
 
     log('predict the result')
-    generate_predict(directory, start, end)
+    generate_predict(start, end)
 
     log('finish')
