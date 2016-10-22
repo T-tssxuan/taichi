@@ -29,7 +29,7 @@ class output_predict:
         self.e_ratio = 0.560917
 
         debug('output_predict w_ratio: ' + str(self.w_ratio) + 
-                ' e_ratio: ' + self.e_ratio)
+                ' e_ratio: ' + str(self.e_ratio))
 
         self.directory = directory
         path = self.directory + 'airport_gz_flights_chusai.csv'
