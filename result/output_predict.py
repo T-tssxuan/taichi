@@ -182,6 +182,7 @@ class output_predict:
                 self.miss_passenger += 1
                 # fill the empty data with the mean and std
                 tmp = std * np.random.randn() + mean
+                # tmp = 1
                 return tmp
         self.sche['num'] = self.sche['fid'].apply(get_number)
 

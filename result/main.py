@@ -16,6 +16,7 @@ def p_generate_output_predict(range_start, range_end, directory):
     log('range_start: ' + range_start + ' range_end: ' + range_end +
             ' directory: ' + directory)
     op = output_predict(range_start, range_end, directory)
+    log('finish p_generate_output_predict')
 
 def p_generate_input_predict(range_start, range_end, directory, category):
     log('start p_generate_input_predict process')
@@ -23,11 +24,13 @@ def p_generate_input_predict(range_start, range_end, directory, category):
             ' directory: ' + directory + ' category: ' + str(category))
     ip = input_predict(0, directory)
     ip.train(range_start, range_end)
+    log('finish p_generate_input_predict')
 
 def p_generate_base_data(directory, start):
     log('start p_generate_base_data')
     log('directory: ' + directory + ' start: ' + str(start))
     generate_base_data(directory, start)
+    log('finish p_generate_base_data')
 
 
 
@@ -67,9 +70,9 @@ if __name__ == '__main__':
     start = pd.to_datetime(start, format=fmt)
     end = pd.to_datetime(end, format=fmt)
 
-    # generate the pasenger number stastistic info for each flight id
-    log('generate the passenger number')
-    generate_flight_passenger(directory)
+    # # generate the pasenger number stastistic info for each flight id
+    # log('generate the passenger number')
+    # generate_flight_passenger(directory)
 
     # generate airport output predict for each area
     log('genrate output predict for each area')

@@ -38,7 +38,7 @@ def generate_pure_variation():
 
     pure_data = pure_data.append(wpure_data)
 
-    pure_data['num'] = pure_data['num'] * 0.6
+    pure_data['num'] = pure_data['num'] * 0.18
 
     pure_data.to_csv(
             './info/variation_data.csv', 

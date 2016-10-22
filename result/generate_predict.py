@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from generate_base_data import generate_base_data
 from log import debug
+import time
 
 def generate_predict(directory, start, end, gran=10):
     debug('start: ' + str(start) + ' end: ' + str(end) + ' gran' + str(gran))
@@ -19,13 +20,13 @@ def generate_predict(directory, start, end, gran=10):
     net_in = pd.read_csv('./info/variation_data.csv')
     net_in['timeStamp'] = pd.to_datetime(net_in['timeStamp'])
     net_in = net_in.groupby(
-            ['area', pd.Grouper(key='timeStamp', freq=str(gran) + 'Min')]
+            ['area', pd.Grouper(key='timeStamp', freq='1Min')]
             ).sum()
     net_in = net_in.reset_index()
 
     net_in = net_in[
             (net_in['timeStamp'] >= start) &
-            (net_in['timeStamp'] <= end)
+            (net_in['timeStamp'] < end)
             ]
 
     net_in = net_in.groupby('area')
@@ -39,13 +40,13 @@ def generate_predict(directory, start, end, gran=10):
     # datetime transform to the final format
     def date_func(x): 
         s = str(x.year) + '-' + str(x.month) + '-'
-        s += str(x.day) + '-' + str(x.hour) + '-' + str(x.minute)
+        s += str(x.day) + '-' + str(x.hour) + '-' + str(int(x.minute / 10))
         return s
 
     # generate the result for each area and each ap of the area
     for area in net_in.groups:
         # preprocess the pure input of the area
-        sec_net_in = net_in.get_group(area)
+        sec_net_in = net_in.get_group(area).copy()
         del sec_net_in['area']
         sec_net_in = sec_net_in.set_index('timeStamp')
         sec_net_in = sec_net_in.sort_index()
@@ -85,7 +86,8 @@ def generate_predict(directory, start, end, gran=10):
     result['passengerCount'] = result['passengerCount'] / 10
     result = result[columns]
 
-    result.to_csv('./info/result.csv', columns=columns, index=False)
+    file_name = './info/result--' + time.strftime('%Y-%m-%d-%H-%M-%S') + '.csv'
+    result.to_csv(file_name, columns=columns, index=False)
     return result
 
 

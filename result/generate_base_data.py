@@ -21,7 +21,7 @@ def generate_base_data(directory, epoch):
 
     base_data = base_data.groupby(
             ['WIFIAPTag', pd.Grouper(key='timeStamp', freq='1Min')]
-            ).sum()
+            ).mean()
     base_data = base_data.reset_index()
 
     offset = pd.DateOffset(minutes=-1)
